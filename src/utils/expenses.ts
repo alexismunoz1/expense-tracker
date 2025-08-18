@@ -101,7 +101,7 @@ export const getExpenses = (): Expense[] => {
 // Funciones para categorías
 export const saveCategory = (category: Category): void => {
   try {
-    let categories: Category[] = getCategories();
+    const categories: Category[] = getCategories();
     
     // Verificar si la categoría ya existe
     const existingIndex = categories.findIndex(cat => cat.id === category.id);

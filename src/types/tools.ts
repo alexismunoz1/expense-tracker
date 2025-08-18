@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // === CONSTANTES DE ACCIONES ===
 
 // Acciones disponibles para gestión de gastos
-export const GASTO_ACCIONES = ['crear', 'obtener', 'modificar'] as const;
+export const GASTO_ACCIONES = ["crear", "obtener", "modificar"] as const;
 
 // Acciones disponibles para gestión de categorías
-export const CATEGORIA_ACCIONES = ['crear', 'obtener'] as const;
+export const CATEGORIA_ACCIONES = ["crear", "obtener"] as const;
 
 // === TIPOS DERIVADOS DE CONSTANTES ===
 
-export type GastoAccion = typeof GASTO_ACCIONES[number];
-export type CategoriaAccion = typeof CATEGORIA_ACCIONES[number];
+export type GastoAccion = (typeof GASTO_ACCIONES)[number];
+export type CategoriaAccion = (typeof CATEGORIA_ACCIONES)[number];
 
 // === TIPOS DE DATOS ===
 
@@ -95,13 +96,13 @@ export const isValidCategoriaAccion = (accion: string): accion is CategoriaAccio
 // === CONSTANTES DE VALIDACIÓN ===
 
 // Campos requeridos para crear un gasto
-export const CAMPOS_REQUERIDOS_CREAR_GASTO = ['titulo', 'precio', 'categoria'] as const;
+export const CAMPOS_REQUERIDOS_CREAR_GASTO = ["titulo", "precio", "categoria"] as const;
 
 // Campos requeridos para crear una categoría
-export const CAMPOS_REQUERIDOS_CREAR_CATEGORIA = ['nombre', 'color', 'icono'] as const;
+export const CAMPOS_REQUERIDOS_CREAR_CATEGORIA = ["nombre", "color", "icono"] as const;
 
 // Campos requeridos para modificar un gasto
-export const CAMPOS_REQUERIDOS_MODIFICAR_GASTO = ['id'] as const;
+export const CAMPOS_REQUERIDOS_MODIFICAR_GASTO = ["id"] as const;
 
 // === TIPOS PARA FUNCIONES INDIVIDUALES ===
 

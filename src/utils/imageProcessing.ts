@@ -15,9 +15,9 @@ export interface ImageProcessingHandlers {
 
 // ===== HOOK PERSONALIZADO PARA PROCESAMIENTO DE IMÁGENES =====
 
-export const useImageProcessing = (
-  sendMessage: (message: { text: string }) => void
-): ImageProcessingState & ImageProcessingHandlers => {
+// export const useImageProcessing = (
+//   sendMessage: (message: { text: string }) => void
+// ): ImageProcessingState & ImageProcessingHandlers => {
   // Estados comentados - descomentar para habilitar
   /*
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -77,16 +77,16 @@ export const useImageProcessing = (
   */
 
   // Versión deshabilitada temporal - reemplazar con código de arriba
-  return {
-    selectedFile: null,
-    isProcessingImage: false,
-    handleFileSelect: () => {},
-    processImage: async () => {},
-    handleImageSubmit: () => {},
-    setSelectedFile: () => {},
-    setIsProcessingImage: () => {},
-  };
-};
+//   return {
+//     selectedFile: null,
+//     isProcessingImage: false,
+//     handleFileSelect: () => {},
+//     processImage: async () => {},
+//     handleImageSubmit: () => {},
+//     setSelectedFile: () => {},
+//     setIsProcessingImage: () => {},
+//   };
+// };
 
 // ===== COMPONENTES UI PARA IMÁGENES =====
 

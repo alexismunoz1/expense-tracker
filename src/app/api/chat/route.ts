@@ -1,16 +1,8 @@
 import { NextRequest } from "next/server";
 import { xai } from "@ai-sdk/xai";
 import { convertToModelMessages, streamText, UIMessage, stepCountIs } from "ai";
-import {
-  executeGestionarGasto,
-  executeGestionarCategoria,
-  executeProcesarImagenRecibo,
-} from "@/utils/tools";
-import {
-  gestionarGastoSchema,
-  gestionarCategoriaSchema,
-  procesarImagenReciboSchema,
-} from "@/schemas/tools";
+import { executeGestionarGasto, executeGestionarCategoria } from "@/utils/tools";
+import { gestionarGastoSchema, gestionarCategoriaSchema } from "@/schemas/tools";
 
 // const model = openai(process.env.OPENAI_MODEL || "gpt-4o-mini");
 
