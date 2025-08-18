@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1755474481143",
+    "titulo": "Peluquería",
+    "precio": 15,
+    "categoria": "otros",
+    "fecha": "17 de agosto de 2025"
+  },
+  {
+    "id": "1755476675046",
+    "titulo": "Alimento para perro",
+    "precio": 20,
+    "categoria": "otros",
+    "fecha": "17 de agosto de 2025"
+  }
+]
