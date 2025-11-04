@@ -1,6 +1,6 @@
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createWorker } from "tesseract.js";
 import { nanoid } from "nanoid";
+import path from "path";
 import { Expense, Category } from "@/types/expense";
 import {
   GestionarGastoInput,
@@ -330,86 +330,229 @@ export const executeModificarGasto = async ({
   }
 };
 
-// Función para procesar imagen de recibo
+// Función auxiliar para extraer el monto de un texto OCR
+const extractAmount = (text: string): number => {
+  // Patrones para buscar montos (con varios formatos de moneda)
+  const patterns = [
+    // Patrones con palabras clave (TOTAL, Total, etc.)
+    /(?:total|importe|suma|amount|precio|price|monto)[\s:]*\$?\s*([\d,.]+)/gi,
+    /(?:total|importe|suma|amount|precio|price|monto)[\s:]*€?\s*([\d,.]+)/gi,
+    // Patrones con símbolos de moneda
+    /\$\s*([\d,.]+)/g,
+    /€\s*([\d,.]+)/g,
+    // Patrones de números con formato de precio (al final de línea)
+    /([\d,.]+)/gm,
+  ];
+
+  const amounts: number[] = [];
+
+  for (const pattern of patterns) {
+    const matches = text.matchAll(pattern);
+    for (const match of matches) {
+      const amountStr = match[1]?.replace(/[,.\s]/g, "") || match[0]?.replace(/[$€,.\s]/g, "");
+      const amount = parseFloat(amountStr);
+      if (!isNaN(amount) && amount > 0 && amount < 1000000) {
+        amounts.push(amount);
+      }
+    }
+  }
+
+  // Retornar el monto más alto encontrado (usualmente es el total)
+  return amounts.length > 0 ? Math.max(...amounts) : 0;
+};
+
+// Función auxiliar para extraer descripción del texto OCR
+const extractDescription = (text: string): string => {
+  // Tomar las primeras 2-3 líneas no vacías (nombre del establecimiento)
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  // Buscar líneas que parezcan nombres de establecimientos (no son solo números)
+  const descriptionLines = lines
+    .slice(0, 5)
+    .filter((line) => !/^\d+$/.test(line) && !/^[\d\s\-:\/]+$/.test(line));
+
+  const description = descriptionLines.slice(0, 2).join(" ");
+
+  return description.substring(0, 50) || "Gasto detectado en recibo";
+};
+
+// Función auxiliar para inferir categoría del texto OCR
+const inferCategory = (text: string): string => {
+  const lowerText = text.toLowerCase();
+
+  // Patrones de palabras clave por categoría
+  const categoryPatterns: Record<string, string[]> = {
+    alimentacion: [
+      "restaurante",
+      "restaurant",
+      "comida",
+      "café",
+      "cafe",
+      "bar",
+      "pizza",
+      "hamburguesa",
+      "supermercado",
+      "market",
+      "tienda",
+      "food",
+      "cocina",
+      "panaderia",
+    ],
+    transporte: [
+      "gasolina",
+      "gas",
+      "uber",
+      "taxi",
+      "metro",
+      "bus",
+      "autobus",
+      "transporte",
+      "parking",
+      "estacionamiento",
+      "peaje",
+      "combustible",
+    ],
+    entretenimiento: [
+      "cine",
+      "cinema",
+      "teatro",
+      "concierto",
+      "museo",
+      "parque",
+      "juego",
+      "game",
+      "entretenimiento",
+      "diversión",
+    ],
+    salud: [
+      "farmacia",
+      "pharmacy",
+      "hospital",
+      "médico",
+      "doctor",
+      "clinica",
+      "salud",
+      "health",
+      "medicina",
+      "consulta",
+    ],
+    educacion: [
+      "escuela",
+      "school",
+      "universidad",
+      "curso",
+      "course",
+      "libro",
+      "book",
+      "educación",
+      "education",
+      "academia",
+    ],
+    servicios: [
+      "luz",
+      "agua",
+      "internet",
+      "teléfono",
+      "phone",
+      "electricidad",
+      "gas natural",
+      "cable",
+      "servicio",
+      "service",
+    ],
+  };
+
+  // Buscar coincidencias
+  for (const [category, keywords] of Object.entries(categoryPatterns)) {
+    if (keywords.some((keyword) => lowerText.includes(keyword))) {
+      return category;
+    }
+  }
+
+  return "otros"; // Categoría por defecto
+};
+
+// Función para procesar imagen de recibo con Tesseract.js OCR
 export const executeProcesarImagenRecibo = async ({
   imagenBase64,
   mimeType,
 }: ProcesarImagenReciboInput) => {
+  let worker;
+
   try {
-    // Usar OpenAI Vision API para analizar la imagen
-    const response = await generateText({
-      model: openai("gpt-4o"),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Analiza este recibo y extrae en JSON:
-              {
-                "description": "Producto/servicio (máx 50 chars)",
-                "amount": "Precio como número",
-                "category": "alimentacion|transporte|entretenimiento|salud|educacion|servicios|otros",
-                "confidence": "alto|medio|bajo",
-                "details": "Info adicional"
-              }
+    let base64Data: string;
+    let imageMimeType: string;
 
-              Solo JSON válido, sin texto extra.`,
-            },
-            {
-              type: "image",
-              image: `data:${mimeType};base64,${imagenBase64}`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const content = response.text;
-
-    if (!content) {
-      throw new Error("No se pudo analizar la imagen");
+    // Si la imagen viene como data URL completa, extraer base64 y mimeType
+    if (imagenBase64.startsWith("data:")) {
+      const match = imagenBase64.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        imageMimeType = match[1];
+        base64Data = match[2];
+      } else {
+        throw new Error("Formato de data URL inválido");
+      }
+    } else {
+      // Si viene como base64 puro, usar el mimeType proporcionado o asumir jpeg
+      base64Data = imagenBase64;
+      imageMimeType = mimeType || "image/jpeg";
     }
 
-    // Intentar parsear el JSON de la respuesta
-    let analysisResult;
-    try {
-      // Limpiar la respuesta en caso de que tenga texto adicional
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : content;
-      analysisResult = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError);
-      // Respuesta de fallback si el parsing falla
-      analysisResult = {
-        description: "Gasto detectado en imagen",
-        amount: 0,
-        category: "otros",
-        confidence: "bajo",
-        details: "No se pudo analizar completamente la imagen",
-      };
+    // Crear worker de Tesseract con español e inglés para mejor detección
+    const workerPath = path.join(process.cwd(), "node_modules/tesseract.js/src/worker-script/node/index.js");
+    worker = await createWorker(["spa", "eng"], 1, {
+      workerPath,
+      logger: (m) => {
+        // Log opcional para debugging
+        if (m.status === "recognizing text") {
+          console.log(`Tesseract progreso: ${Math.round(m.progress * 100)}%`);
+        }
+      },
+    });
+
+    // Construir data URL completa para Tesseract
+    const imageDataUrl = `data:${imageMimeType};base64,${base64Data}`;
+
+    // Realizar OCR en la imagen
+    const {
+      data: { text, confidence },
+    } = await worker.recognize(imageDataUrl);
+
+    console.log("Texto OCR extraído:", text);
+    console.log("Confianza Tesseract:", confidence);
+
+    // Terminar el worker
+    await worker.terminate();
+
+    if (!text || text.trim().length === 0) {
+      throw new Error("No se pudo extraer texto de la imagen");
+    }
+
+    // Extraer información del texto usando parsing personalizado
+    const amount = extractAmount(text);
+    const description = extractDescription(text);
+    const category = inferCategory(text);
+
+    // Calcular nivel de confianza basado en Tesseract y si encontramos datos
+    let confidenceLevel: "alto" | "medio" | "bajo";
+    if (confidence > 80 && amount > 0) {
+      confidenceLevel = "alto";
+    } else if (confidence > 50 && amount > 0) {
+      confidenceLevel = "medio";
+    } else {
+      confidenceLevel = "bajo";
     }
 
     // Validar y limpiar los datos
     const extractedData = {
-      description: String(analysisResult.description || "Gasto detectado").substring(
-        0,
-        50
-      ),
-      amount: parseFloat(analysisResult.amount) || 0,
-      category: [
-        "alimentacion",
-        "transporte",
-        "entretenimiento",
-        "salud",
-        "educacion",
-        "servicios",
-        "otros",
-      ].includes(analysisResult.category)
-        ? analysisResult.category
-        : "otros",
-      confidence: analysisResult.confidence || "medio",
-      details: analysisResult.details || "Análisis completado",
+      description: description,
+      amount: amount,
+      category: category,
+      confidence: confidenceLevel,
+      details: `OCR procesado con ${Math.round(confidence)}% de confianza`,
     };
 
     // Crear el gasto automáticamente usando la función saveExpense
@@ -453,18 +596,65 @@ export const executeProcesarImagenRecibo = async ({
 
         ${extractedData.details ? `ℹ️ **Detalles:** ${extractedData.details}` : ""}
 
+        📝 **Texto extraído del recibo:**
+        \`\`\`
+        ${text.substring(0, 200)}${text.length > 200 ? "..." : ""}
+        \`\`\`
+
         Por favor, proporciona manualmente el monto para registrar este gasto.`,
         extractedData,
       };
     }
   } catch (error) {
+    // Asegurarse de terminar el worker si hubo error
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch (terminateError) {
+        console.error("Error al terminar worker:", terminateError);
+      }
+    }
+
     console.error("Error processing receipt:", error);
+
+    let errorMessage = "Error desconocido al procesar la imagen";
+
+    if (error instanceof Error) {
+      const errorStr = error.message.toLowerCase();
+
+      if (errorStr.includes("language") || errorStr.includes("traineddata")) {
+        errorMessage = `❌ **Error: No se pudo cargar el modelo de lenguaje OCR**
+
+No se pudieron descargar los archivos de lenguaje necesarios para el OCR.
+
+**Soluciones:**
+1. Verifica tu conexión a internet
+2. Intenta nuevamente en unos momentos
+3. Registra el gasto manualmente usando el chat
+
+Por favor, proporciona los datos del gasto manualmente o intenta más tarde.`;
+      } else if (errorStr.includes("image") || errorStr.includes("formato")) {
+        errorMessage = `❌ **Error: Formato de imagen inválido**
+
+La imagen proporcionada no pudo ser procesada por el OCR.
+
+**Soluciones:**
+1. Asegúrate de que la imagen sea clara y legible
+2. Intenta con otro formato de imagen (JPG, PNG)
+3. Registra el gasto manualmente
+
+Por favor, registra el gasto manualmente.`;
+      } else {
+        errorMessage = `❌ **Error al procesar el recibo con OCR**
+
+${error.message}
+
+Por favor, intenta nuevamente o registra el gasto manualmente.`;
+      }
+    }
+
     return {
-      message: `❌ **Error al procesar el recibo**
-
-      ${error instanceof Error ? error.message : "Error desconocido"}
-
-      Por favor, intenta nuevamente o registra el gasto manualmente.`,
+      message: errorMessage,
     };
   }
 };

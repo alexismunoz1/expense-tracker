@@ -41,10 +41,11 @@ export const gestionarCategoriaSchema = z.object({
 export const procesarImagenReciboSchema = z.object({
   imagenBase64: z
     .string()
-    .describe("Imagen del recibo en formato base64"),
+    .describe("Imagen del recibo en formato base64 (sin el prefijo data:mimeType;base64,) o data URL completa"),
   mimeType: z
     .string()
-    .describe("Tipo MIME de la imagen (ej: image/jpeg)"),
+    .optional()
+    .describe("Tipo MIME de la imagen (ej: image/jpeg). Si se proporciona una data URL completa, este campo es opcional"),
 });
 
 // === TIPOS TYPESCRIPT (Agrupados) ===
