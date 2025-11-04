@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.15",
@@ -17,7 +17,7 @@
     "ai": "^5.0.15",
     "formidable": "^3.5.4",
     "multer": "^2.0.2",
-    "next": "15.4.6",
+    "next": "canary",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
@@ -29,7 +29,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^8",
     "eslint-config-next": "15.4.6",
     "typescript": "^5"
   }

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Enable React Compiler for automatic memoization
+  reactCompiler: true,
 };
 
 export default nextConfig;
