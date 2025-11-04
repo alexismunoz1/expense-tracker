@@ -12,5 +12,12 @@
     "precio": 20,
     "categoria": "otros",
     "fecha": "17 de agosto de 2025"
+  },
+  {
+    "id": "xdqztrt-W6RaSxZPiphou",
+    "titulo": "Cena en restaurante",
+    "precio": 20,
+    "categoria": "alimentacion",
+    "fecha": "2025-11-04T02:53:56.468Z"
   }
 ]

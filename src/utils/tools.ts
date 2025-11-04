@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { nanoid } from "nanoid";
 import { Expense, Category } from "@/types/expense";
 import {
   GestionarGastoInput,
@@ -65,7 +66,7 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
         });
 
       case 'obtener':
-        const expenses = getExpenses();
+        const expenses = await getExpenses();
         let filteredExpenses = expenses;
 
         // Aplicar filtros si existen
@@ -170,18 +171,14 @@ export const executeGuardarGasto = async ({
 }: GuardarGastoInput): Promise<CrearGastoResponse> => {
   try {
     const expense: Expense = {
-      id: Date.now().toString(),
+      id: nanoid(),
       titulo,
       precio,
       categoria,
-      fecha: new Date().toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      }),
+      fecha: new Date().toISOString(),
     };
 
-    saveExpense(expense);
+    await saveExpense(expense);
     return {
       success: true,
       message: `Gasto "${titulo}" registrado exitosamente por $${precio.toFixed(
@@ -201,7 +198,7 @@ export const executeGuardarGasto = async ({
 // Función para obtener todos los gastos
 export const executeObtenerGastos = async (): Promise<ObtenerGastosResponse> => {
   try {
-    const expenses = getExpenses();
+    const expenses = await getExpenses();
     const total = expenses.reduce((sum, expense) => sum + expense.precio, 0);
 
     return {
@@ -236,7 +233,7 @@ export const executeCrearCategoria = async ({
       fechaCreacion: new Date().toISOString(),
     };
 
-    saveCategory(category);
+    await saveCategory(category);
     return {
       success: true,
       message: `Categoría "${nombre}" creada exitosamente con icono ${icono}`,
@@ -254,7 +251,7 @@ export const executeCrearCategoria = async ({
 // Función para obtener todas las categorías
 export const executeObtenerCategorias = async (): Promise<ObtenerCategoriasResponse> => {
   try {
-    const categories = getCategories();
+    const categories = await getCategories();
     return {
       success: true,
       message: `Se encontraron ${categories.length} categorías disponibles`,
@@ -286,7 +283,7 @@ export const executeModificarGasto = async ({
     }
 
     // Verificar que el gasto existe
-    const existingExpense = getExpenseById(id);
+    const existingExpense = await getExpenseById(id);
     if (!existingExpense) {
       return {
         success: false,
@@ -309,7 +306,14 @@ export const executeModificarGasto = async ({
     }
 
     // Actualizar el gasto
-    const updatedExpense = updateExpense(id, { titulo, precio, categoria });
+    const updatedExpense = await updateExpense(id, { titulo, precio, categoria });
+
+    if (!updatedExpense) {
+      return {
+        success: false,
+        message: "Error al actualizar el gasto",
+      };
+    }
 
     return {
       success: true,
@@ -411,18 +415,14 @@ export const executeProcesarImagenRecibo = async ({
     // Crear el gasto automáticamente usando la función saveExpense
     if (extractedData.amount > 0) {
       const expense: Expense = {
-        id: Date.now().toString(),
+        id: nanoid(),
         titulo: extractedData.description,
         precio: extractedData.amount,
         categoria: extractedData.category,
-        fecha: new Date().toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }),
+        fecha: new Date().toISOString(),
       };
 
-      saveExpense(expense);
+      await saveExpense(expense);
 
       return {
         message: `✅ **Recibo procesado y gasto registrado exitosamente**

@@ -1,4 +1,5 @@
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
+import { writeFile, readFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
 import { join } from "path";
 import { Expense, Category } from "@/types/expense";
 
@@ -58,38 +59,38 @@ const defaultCategories: Category[] = [
   },
 ];
 
-export const saveExpense = (expense: Expense): void => {
+export const saveExpense = async (expense: Expense): Promise<void> => {
   try {
     let expenses: Expense[] = [];
-    
+
     if (existsSync(expensesFilePath)) {
-      const data = readFileSync(expensesFilePath, "utf-8");
+      const data = await readFile(expensesFilePath, "utf-8");
       expenses = JSON.parse(data);
     } else {
       const dir = join(process.cwd(), "data");
       if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+        await mkdir(dir, { recursive: true });
       }
     }
-    
+
     expenses.push(expense);
-    writeFileSync(expensesFilePath, JSON.stringify(expenses, null, 2));
+    await writeFile(expensesFilePath, JSON.stringify(expenses, null, 2));
   } catch (error) {
     console.error("Error saving expense:", error);
     throw new Error("Error al guardar el gasto");
   }
 };
 
-export const getExpenses = (): Expense[] => {
+export const getExpenses = async (): Promise<Expense[]> => {
   try {
     if (!existsSync(expensesFilePath)) {
       return [];
     }
-    
-    const data = readFileSync(expensesFilePath, "utf-8");
+
+    const data = await readFile(expensesFilePath, "utf-8");
     const expenses = JSON.parse(data);
-    
-    return expenses.sort((a: Expense, b: Expense) => 
+
+    return expenses.sort((a: Expense, b: Expense) =>
       new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
     );
   } catch (error) {
@@ -99,10 +100,10 @@ export const getExpenses = (): Expense[] => {
 };
 
 // Funciones para categorías
-export const saveCategory = (category: Category): void => {
+export const saveCategory = async (category: Category): Promise<void> => {
   try {
-    const categories: Category[] = getCategories();
-    
+    const categories: Category[] = await getCategories();
+
     // Verificar si la categoría ya existe
     const existingIndex = categories.findIndex(cat => cat.id === category.id);
     if (existingIndex !== -1) {
@@ -110,34 +111,34 @@ export const saveCategory = (category: Category): void => {
     } else {
       categories.push(category);
     }
-    
+
     const dir = join(process.cwd(), "data");
     if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
+      await mkdir(dir, { recursive: true });
     }
-    
-    writeFileSync(categoriesFilePath, JSON.stringify(categories, null, 2));
+
+    await writeFile(categoriesFilePath, JSON.stringify(categories, null, 2));
   } catch (error) {
     console.error("Error saving category:", error);
     throw new Error("Error al guardar la categoría");
   }
 };
 
-export const getCategories = (): Category[] => {
+export const getCategories = async (): Promise<Category[]> => {
   try {
     if (!existsSync(categoriesFilePath)) {
       // Si no existe el archivo, crear uno con las categorías predeterminadas
       const dir = join(process.cwd(), "data");
       if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+        await mkdir(dir, { recursive: true });
       }
-      writeFileSync(categoriesFilePath, JSON.stringify(defaultCategories, null, 2));
+      await writeFile(categoriesFilePath, JSON.stringify(defaultCategories, null, 2));
       return defaultCategories;
     }
-    
-    const data = readFileSync(categoriesFilePath, "utf-8");
+
+    const data = await readFile(categoriesFilePath, "utf-8");
     const categories = JSON.parse(data);
-    
+
     return categories.sort((a: Category, b: Category) => a.nombre.localeCompare(b.nombre));
   } catch (error) {
     console.error("Error reading categories:", error);
@@ -145,9 +146,9 @@ export const getCategories = (): Category[] => {
   }
 };
 
-export const getCategoryById = (id: string): Category | null => {
+export const getCategoryById = async (id: string): Promise<Category | null> => {
   try {
-    const categories = getCategories();
+    const categories = await getCategories();
     return categories.find(cat => cat.id === id) || null;
   } catch (error) {
     console.error("Error getting category by ID:", error);
@@ -155,34 +156,34 @@ export const getCategoryById = (id: string): Category | null => {
   }
 };
 
-export const updateExpense = (id: string, updates: Partial<Omit<Expense, 'id' | 'fecha'>>): Expense | null => {
+export const updateExpense = async (id: string, updates: Partial<Omit<Expense, 'id' | 'fecha'>>): Promise<Expense | null> => {
   try {
     let expenses: Expense[] = [];
-    
+
     if (existsSync(expensesFilePath)) {
-      const data = readFileSync(expensesFilePath, "utf-8");
+      const data = await readFile(expensesFilePath, "utf-8");
       expenses = JSON.parse(data);
     } else {
       throw new Error("No se encontró el archivo de gastos");
     }
-    
+
     // Buscar el gasto por ID
     const expenseIndex = expenses.findIndex(expense => expense.id === id);
     if (expenseIndex === -1) {
       return null; // Gasto no encontrado
     }
-    
+
     // Actualizar solo los campos proporcionados
     const updatedExpense = {
       ...expenses[expenseIndex],
       ...updates
     };
-    
+
     expenses[expenseIndex] = updatedExpense;
-    
+
     // Guardar los gastos actualizados
-    writeFileSync(expensesFilePath, JSON.stringify(expenses, null, 2));
-    
+    await writeFile(expensesFilePath, JSON.stringify(expenses, null, 2));
+
     return updatedExpense;
   } catch (error) {
     console.error("Error updating expense:", error);
@@ -190,9 +191,9 @@ export const updateExpense = (id: string, updates: Partial<Omit<Expense, 'id' | 
   }
 };
 
-export const getExpenseById = (id: string): Expense | null => {
+export const getExpenseById = async (id: string): Promise<Expense | null> => {
   try {
-    const expenses = getExpenses();
+    const expenses = await getExpenses();
     return expenses.find(expense => expense.id === id) || null;
   } catch (error) {
     console.error("Error getting expense by ID:", error);

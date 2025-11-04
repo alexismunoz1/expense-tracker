@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Expense, Category } from "./expense";
+
 // === CONSTANTES DE ACCIONES ===
 
 // Acciones disponibles para gestión de gastos
@@ -68,16 +69,16 @@ export interface BaseResponse {
 
 // Respuesta específica para operaciones de gastos
 export interface GastoResponse extends BaseResponse {
-  expenses?: any[]; // Usar tipo Expense cuando esté disponible
+  expenses?: Expense[];
   total?: number;
   count?: number;
-  expense?: any; // Para operaciones de crear/modificar
+  expense?: Expense; // Para operaciones de crear/modificar
 }
 
 // Respuesta específica para operaciones de categorías
 export interface CategoriaResponse extends BaseResponse {
-  categories?: any[]; // Usar tipo Category cuando esté disponible
-  category?: any; // Para operaciones de crear
+  categories?: Category[];
+  category?: Category; // Para operaciones de crear
   count?: number;
 }
 
@@ -132,30 +133,30 @@ export interface ModificarGastoInput {
 
 // Respuesta para crear un gasto
 export interface CrearGastoResponse extends BaseResponse {
-  expense?: any; // Tipo Expense cuando esté disponible
+  expense?: Expense;
 }
 
 // Respuesta para obtener gastos
 export interface ObtenerGastosResponse extends BaseResponse {
-  expenses?: any[];
+  expenses?: Expense[];
   total?: number;
   count?: number;
 }
 
 // Respuesta para crear categoría
 export interface CrearCategoriaResponse extends BaseResponse {
-  category?: any; // Tipo Category cuando esté disponible
+  category?: Category;
 }
 
 // Respuesta para obtener categorías
 export interface ObtenerCategoriasResponse extends BaseResponse {
-  categories?: any[];
+  categories?: Category[];
   count?: number;
 }
 
 // Respuesta para modificar gasto
 export interface ModificarGastoResponse extends BaseResponse {
-  expense?: any;
-  originalExpense?: any;
-  updatedExpense?: any;
+  expense?: Expense;
+  originalExpense?: Expense;
+  updatedExpense?: Expense;
 }

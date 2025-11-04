@@ -34,9 +34,12 @@ yarn lint         # Run ESLint directly (no longer using next lint)
   - Direct ESLint CLI usage (migrated from `next lint`)
 
 ### AI & Data Processing
-- **Vercel AI SDK:** Latest version with streaming support
-- **xAI Grok-3:** Primary AI model for chat interactions
-- **Zod:** 4.0.17 for schema validation
+- **Vercel AI SDK:** 5.0.87 (latest stable v5) with streaming support
+- **AI SDK React:** 2.0.87 for React hooks (useChat)
+- **AI SDK OpenAI:** 2.0.62 provider
+- **AI SDK xAI:** 2.0.31 provider (Grok-3 model)
+- **Zod:** 4.1.12 for schema validation
+- **nanoid:** 5.1.6 for unique ID generation
 
 ### React Compiler Configuration
 The project uses the stable React Compiler feature introduced in Next.js 16:
@@ -131,6 +134,61 @@ Currently uses xAI Grok-3 model (line 9 in route.ts). OpenAI integration code ex
 - The agent is configured to format expense tables in Markdown with specific column headers and formatting
 
 ## Recent Updates
+
+### AI SDK 5 Upgrade & Code Quality Improvements (2025-11-03)
+The project was upgraded to the latest AI SDK v5 with comprehensive code quality improvements:
+
+**AI SDK Updates:**
+- `ai@5.0.87` (from 5.0.15) - Latest stable AI SDK v5
+- `@ai-sdk/react@2.0.87` (from 2.0.15)
+- `@ai-sdk/openai@2.0.62` (from 2.0.15)
+- `@ai-sdk/xai@2.0.31` (from 2.0.7)
+- `zod@4.1.12` (from 4.0.17) - Updated for AI SDK 5 compatibility
+
+**Tool Definitions Improved:**
+- Migrated to AI SDK 5 `tool()` helper function (src/app/api/chat/route.ts)
+- Using `inputSchema` with Zod validation
+- Better type safety and consistency with SDK patterns
+
+**Type Safety Enhancements:**
+- Eliminated ALL `any` types from codebase (src/types/tools.ts)
+- Replaced with proper `Expense` and `Category` types
+- Removed `@typescript-eslint/no-explicit-any` disable comments
+- Full type safety across responses and data structures
+
+**Async/Await Data Layer:**
+- Converted all data persistence to async/await (src/utils/expenses.ts)
+- Using `fs/promises` instead of synchronous fs operations
+- Non-blocking I/O for better performance and scalability
+- All tool executors updated to use await properly
+
+**Improved ID Generation:**
+- Installed `nanoid@5.1.6` for collision-resistant unique IDs
+- Replaced `Date.now().toString()` with `nanoid()`
+- Eliminates risk of ID collisions in concurrent operations
+
+**Better Date Handling:**
+- Dates now stored as ISO 8601 timestamps (`fecha: new Date().toISOString()`)
+- Previously stored as localized Spanish strings
+- Enables proper date sorting, filtering, and range queries
+- Format to Spanish locale only when displaying to user
+
+**API Route Hardening:**
+- Added Zod validation for request body
+- Comprehensive try-catch error handling
+- Structured error responses with proper HTTP status codes
+- Request validation before processing
+
+**Dependencies Cleaned:**
+- Removed unused `formidable` and `multer` packages
+- Removed `@types/formidable` and `@types/multer`
+- Cleaner dependency tree
+
+**Validation:**
+- ✅ Build successful with TypeScript strict mode
+- ✅ ESLint passes with no errors
+- ✅ All types properly inferred
+- ✅ Async operations handled correctly
 
 ### Next.js 16 Migration (2025-11-03)
 The project was successfully upgraded from Next.js 15.4.6 to Next.js 16.0.2-canary.6 with the following changes:

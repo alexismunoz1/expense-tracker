@@ -9,20 +9,17 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.15",
-    "@ai-sdk/react": "^2.0.15",
-    "@ai-sdk/xai": "^2.0.7",
-    "@types/formidable": "^3.4.5",
-    "@types/multer": "^2.0.0",
-    "ai": "^5.0.15",
-    "formidable": "^3.5.4",
-    "multer": "^2.0.2",
+    "@ai-sdk/openai": "^2.0.62",
+    "@ai-sdk/react": "^2.0.87",
+    "@ai-sdk/xai": "^2.0.31",
+    "ai": "^5.0.87",
+    "nanoid": "^5.1.6",
     "next": "canary",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "zod": "^4.0.17"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
