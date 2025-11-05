@@ -58,6 +58,22 @@ export interface ProcesarImagenReciboInput {
   mimeType: string;
 }
 
+// Datos extraídos del OCR (usados cuando se requiere clarificación)
+export interface ExtractedOcrData {
+  amount: number;
+  category: string;
+  rawDescription: string;
+  confidence: number;
+}
+
+// Respuesta del procesamiento de OCR
+export interface OcrResult {
+  requiresClarification: boolean;
+  extractedData?: ExtractedOcrData;
+  expense?: Expense;
+  message: string;
+}
+
 // === TIPOS DE RESPUESTA ===
 
 // Respuesta base para todas las operaciones

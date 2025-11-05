@@ -1,6 +1,5 @@
 import { createWorker } from "tesseract.js";
 import { nanoid } from "nanoid";
-import path from "path";
 import { Expense, Category } from "@/types/expense";
 import {
   GestionarGastoInput,
@@ -16,6 +15,8 @@ import {
   CrearCategoriaResponse,
   ObtenerCategoriasResponse,
   ModificarGastoResponse,
+  OcrResult,
+  ExtractedOcrData,
   isValidGastoAccion,
   isValidCategoriaAccion,
   CAMPOS_REQUERIDOS_CREAR_GASTO,
@@ -330,6 +331,26 @@ export const executeModificarGasto = async ({
   }
 };
 
+// Función auxiliar para validar si una descripción es clara o no
+const isDescriptionUnclear = (description: string, ocrConfidence: number): boolean => {
+  // Criterio 1: Descripción muy corta (< 5 caracteres)
+  if (description.trim().length < 5) {
+    return true;
+  }
+
+  // Criterio 2: Es el texto genérico/fallback
+  if (description === "Gasto detectado en recibo") {
+    return true;
+  }
+
+  // Criterio 3: Confianza OCR baja (< 75%)
+  if (ocrConfidence < 75) {
+    return true;
+  }
+
+  return false;
+};
+
 // Función auxiliar para extraer el monto de un texto OCR
 const extractAmount = (text: string): number => {
   // Patrones para buscar montos (con varios formatos de moneda)
@@ -502,9 +523,7 @@ export const executeProcesarImagenRecibo = async ({
     }
 
     // Crear worker de Tesseract con español e inglés para mejor detección
-    const workerPath = path.join(process.cwd(), "node_modules/tesseract.js/src/worker-script/node/index.js");
     worker = await createWorker(["spa", "eng"], 1, {
-      workerPath,
       logger: (m) => {
         // Log opcional para debugging
         if (m.status === "recognizing text") {
@@ -557,18 +576,51 @@ export const executeProcesarImagenRecibo = async ({
 
     // Crear el gasto automáticamente usando la función saveExpense
     if (extractedData.amount > 0) {
-      const expense: Expense = {
-        id: nanoid(),
-        titulo: extractedData.description,
-        precio: extractedData.amount,
-        categoria: extractedData.category,
-        fecha: new Date().toISOString(),
-      };
+      // Verificar si la descripción es clara o no
+      const descriptionUnclear = isDescriptionUnclear(extractedData.description, confidence);
 
-      await saveExpense(expense);
+      if (descriptionUnclear) {
+        // Descripción no clara: NO crear el gasto, solicitar aclaración al usuario
+        const ocrData: ExtractedOcrData = {
+          amount: extractedData.amount,
+          category: extractedData.category,
+          rawDescription: extractedData.description,
+          confidence: confidence,
+        };
 
-      return {
-        message: `✅ **Recibo procesado y gasto registrado exitosamente**
+        const result: OcrResult = {
+          requiresClarification: true,
+          extractedData: ocrData,
+          message: `🔍 **Recibo procesado - Se requiere aclaración**
+
+        📋 **Datos detectados:**
+        - **Monto:** $${extractedData.amount.toFixed(2)}
+        - **Categoría:** ${extractedData.category}
+        - **Descripción detectada:** "${extractedData.description}"
+        - **Confianza OCR:** ${Math.round(confidence)}%
+
+        ⚠️ **El nombre del gasto no está claro.** Por favor, proporciona un nombre descriptivo para este gasto.
+
+        _Nota: El gasto NO ha sido registrado aún. Una vez que proporciones el nombre, lo registraré automáticamente._`,
+        };
+
+        return result;
+      } else {
+        // Descripción clara: crear el gasto automáticamente (comportamiento actual)
+        const expense: Expense = {
+          id: nanoid(),
+          titulo: extractedData.description,
+          precio: extractedData.amount,
+          categoria: extractedData.category,
+          fecha: new Date().toISOString(),
+        };
+
+        await saveExpense(expense);
+
+        const result: OcrResult = {
+          requiresClarification: false,
+          expense: expense,
+          message: `✅ **Recibo procesado y gasto registrado exitosamente**
 
         📋 **Datos extraídos:**
         - **Descripción:** ${extractedData.description}
@@ -581,11 +633,13 @@ export const executeProcesarImagenRecibo = async ({
         - **Fecha:** ${expense.fecha}
 
         ${extractedData.details ? `ℹ️ **Detalles:** ${extractedData.details}` : ""}`,
-        extractedData,
-        expense,
-      };
+        };
+
+        return result;
+      }
     } else {
       return {
+        requiresClarification: false,
         message: `⚠️ **Recibo analizado pero no se pudo determinar el monto**
 
         📋 **Datos extraídos:**

@@ -26,6 +26,8 @@ yarn lint         # Run ESLint directly (no longer using next lint)
 
 ### Build & Development Tools
 - **Turbopack:** Enabled by default in Next.js 16 (no flag required)
+  - **Tesseract.js Compatibility:** Configured via `serverExternalPackages: ['tesseract.js']` in next.config.ts
+  - Empty `turbopack: {}` config required for proper initialization
 - **React Compiler:** Enabled via `reactCompiler: true` in next.config.ts
   - Provides automatic memoization and optimization
   - Requires `babel-plugin-react-compiler@^1.0.0`
@@ -62,7 +64,7 @@ The core of the application is an AI agent (currently using xAI's Grok-3 model) 
 
 ### Tool System Architecture
 
-The AI agent has access to two main grouped tools:
+The AI agent has access to three main grouped tools:
 
 1. **gestionarGasto** (Expense Management)
    - Actions: `crear` (create), `obtener` (get), `modificar` (modify)
@@ -78,8 +80,14 @@ The AI agent has access to two main grouped tools:
    - OCR-based receipt scanning using Tesseract.js
    - Extracts text from images (español + inglés language models)
    - Automatically detects amounts, descriptions, and infers categories
-   - Creates expenses directly from receipt images
-   - Integrated in route.ts:36-117 with image handling and OCR processing
+   - **Smart Expense Creation:** Conditionally creates expenses based on description clarity
+   - **User Clarification Flow:** Prompts user for descriptive name when OCR description is unclear
+   - **Clarity Validation:** Uses `isDescriptionUnclear()` to check description quality (src/utils/tools.ts)
+   - **Criteria for Unclear Descriptions:**
+     - Description length < 5 characters
+     - Generic fallback text ("Gasto detectado en recibo")
+     - OCR confidence < 75%
+   - Integrated in route.ts with image filtering via `removeImagesFromMessages()` helper
 
 ### Data Model
 
@@ -118,28 +126,92 @@ The UI includes quick action buttons for common tasks and supports streaming res
 
 Types are centralized and shared between client and server:
 - `src/types/expense.ts` - Core data types (Expense, Category)
-- `src/types/tools.ts` - Tool inputs, responses, constants, and validation utilities
+- `src/types/tools.ts` - Tool inputs, responses, constants, validation utilities, and OCR types
+  - `ExtractedOcrData` - Structured OCR extraction results (amount, description, category, confidence)
+  - `OcrResult` - Complete OCR processing result with clarification flags
+  - `isDescriptionUnclear()` - Validation function for description quality assessment
 - Constants defined for actions (GASTO_ACCIONES, CATEGORIA_ACCIONES) ensure type safety
 
 ### AI Model Configuration
 
-Currently uses xAI Grok-3 model (line 9 in route.ts). OpenAI integration code exists but is commented out. The system prompt is in Spanish and instructs the agent on tool usage and response formatting.
+Currently uses xAI Grok-3 model. OpenAI integration code exists but is commented out. The system prompt is in Spanish and instructs the agent on tool usage and response formatting.
 
 **Important Settings:**
 - `stopWhen: stepCountIs(4)` - Limits tool execution chains to prevent infinite loops
 - System prompt defines Markdown table format for expense displays
+- **Dynamic System Prompt Enrichment:** When OCR requires clarification, system prompt is enhanced with extracted data context
+- **Image Filtering:** `removeImagesFromMessages()` helper removes images from message history before sending to Grok-3
 - Automatic receipt processing: Images uploaded via UI are processed with Tesseract OCR before AI model interaction
 - Grok-3 model receives only text (no image support), OCR results are injected as assistant message
+
+**Error Handling:**
+- API route always returns stream response (even on errors) to prevent `useChat` status getting stuck in "submitted" state
+- Errors are streamed as chat messages for better UX instead of blocking UI with JSON responses
 
 ## Development Notes
 
 - The receipt image processing feature (`procesarImagenRecibo`) is **fully functional** with Tesseract.js OCR
+- **Smart Clarification System:** OCR automatically detects unclear descriptions and prompts users for clarification before creating expenses
 - UI includes working camera/gallery buttons for image upload (lines 58-65, 220-236 in chat/page.tsx)
 - All user-facing text and responses are in Spanish
 - The agent is configured to format expense tables in Markdown with specific column headers and formatting
 - OCR processing happens server-side in Node.js environment (not browser-based)
+- Images are filtered from message history before being sent to Grok-3 model (which doesn't support image inputs)
 
 ## Recent Updates
+
+### User Clarification for Unclear Receipts & Turbopack Fixes (2025-11-04)
+Implemented intelligent receipt processing with user clarification and fixed critical Tesseract.js compatibility issues with Next.js 16 + Turbopack.
+
+**Smart User Clarification System:**
+- **New Types (src/types/tools.ts):**
+  - `ExtractedOcrData` - Structured OCR extraction results with amount, description, category, and confidence
+  - `OcrResult` - Complete OCR result including `requiresClarification` flag and extracted data
+  - `isDescriptionUnclear()` - Validation function checking description quality
+- **Conditional Expense Creation (src/utils/tools.ts):**
+  - Modified `executeProcesarImagenRecibo()` to evaluate description clarity before creating expense
+  - If description is clear: Creates expense automatically (preserves existing behavior)
+  - If description is unclear: Returns result with `requiresClarification: true`, prompts user for descriptive name
+  - If user doesn't respond to clarification request: Expense is not created (prevents low-quality data)
+- **Clarity Criteria:**
+  - Description length < 5 characters
+  - Generic fallback text ("Gasto detectado en recibo")
+  - OCR confidence < 75%
+
+**Enhanced API Route (src/app/api/chat/route.ts):**
+- **Dynamic System Prompt Enrichment:** When `requiresClarification` flag is true, enriches system prompt with extracted OCR data (amount, category, confidence)
+- **Image Filtering Helper:** Added `removeImagesFromMessages()` utility function to filter image content from message history
+  - Prevents "Image inputs are not supported by this model" errors with Grok-3
+  - Allows images to remain in conversation history without breaking AI model calls
+- **Improved Error Handling:** API route now returns stream response even on errors (instead of JSON)
+  - Fixes issue where `useChat` status would get stuck in "submitted" state
+  - Errors appear as chat messages for better UX
+
+**Next.js 16 + Turbopack Compatibility (next.config.ts):**
+- **Critical Fix:** Added `serverExternalPackages: ['tesseract.js']` configuration
+  - Marks Tesseract.js as external package for Turbopack bundler
+  - Resolves: `Cannot find module '/ROOT/node_modules/tesseract.js/src/worker-script/node/index.js'`
+  - Fixes OCR processing failures that caused frontend to hang on "Procesando..."
+- **Turbopack Config:** Added empty `turbopack: {}` object required for Next.js 16 initialization
+- **Simplified Worker Configuration:** Removed manual `workerPath` configuration (Tesseract auto-resolves correctly now)
+- **Removed Webpack Config:** Deleted incompatible webpack configuration (Turbopack is the default bundler)
+
+**User Flow:**
+1. User uploads receipt image via camera/gallery button
+2. Server processes image with Tesseract OCR, extracts text
+3. System evaluates description clarity with `isDescriptionUnclear()`
+4. **If clear:** Expense created automatically, confirmation message sent
+5. **If unclear:** AI agent asks user for descriptive name with context (amount, suggested category, confidence)
+6. User provides description, expense created with user-provided name
+7. Images filtered from messages before sending to Grok-3 model
+
+**Validation:**
+- ✅ Tesseract.js initializes without worker path errors in Next.js 16 + Turbopack
+- ✅ OCR processing completes successfully without frontend hanging
+- ✅ Description clarity validation working as expected
+- ✅ User clarification flow functional end-to-end
+- ✅ Grok-3 receives only text (no image input errors)
+- ✅ `useChat` status properly transitions from "submitted" to "ready" on all responses
 
 ### Tesseract.js OCR Integration & Receipt Processing (2025-11-04)
 Full implementation of receipt image processing using Tesseract.js OCR with critical fixes for Next.js 16 compatibility:

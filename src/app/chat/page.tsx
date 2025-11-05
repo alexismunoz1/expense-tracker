@@ -19,6 +19,8 @@ export default function Page() {
     }),
   });
 
+  console.log("status", status);
+
   return (
     <div className={styles.chatContainer}>
       <header className={styles.chatHeader}>
