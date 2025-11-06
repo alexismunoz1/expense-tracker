@@ -39,19 +39,35 @@ export const getExpenses = async (): Promise<Expense[]> => {
   try {
     const supabase = await createClient();
 
+    // Debug: Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log("🔍 [getExpenses] Auth status:", {
+      user: user ? { id: user.id, email: user.email } : null,
+      authError: authError?.message
+    });
+
     const { data, error } = await supabase
       .from('expenses')
       .select('*')
       .order('fecha', { ascending: false });
 
+    console.log("🔍 [getExpenses] Query result:", {
+      dataCount: data?.length || 0,
+      error: error?.message,
+      errorCode: error?.code,
+      errorDetails: error?.details,
+      errorHint: error?.hint
+    });
+
     if (error) {
-      console.error("Supabase error reading expenses:", error);
+      console.error("❌ Supabase error reading expenses:", error);
       throw new Error("Error al leer los gastos");
     }
 
+    console.log("✅ [getExpenses] Success:", data?.length || 0, "expenses found");
     return data || [];
   } catch (error) {
-    console.error("Error reading expenses:", error);
+    console.error("❌ Error reading expenses:", error);
     throw new Error("Error al leer los gastos");
   }
 };

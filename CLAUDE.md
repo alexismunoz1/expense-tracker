@@ -79,7 +79,7 @@ The core of the application is an AI agent (currently using xAI's Grok-3 model) 
 - **Tool Executors:** `src/utils/tools.ts` - Implementation of tool actions
 - **Data Layer:** `src/utils/expenses.ts` - Supabase database persistence with RLS
 - **Authentication:** `src/lib/supabase/` - Supabase client configuration for server and browser
-- **Middleware:** `src/middleware.ts` - Session management and route protection
+- **Proxy:** `src/proxy.ts` - Session management and route protection (Next.js 16 convention)
 
 ### Tool System Architecture
 
@@ -203,13 +203,53 @@ Currently uses xAI Grok-3 model. OpenAI integration code exists but is commented
 
 ## Recent Updates
 
+### Middleware to Proxy Migration & AI Date Formatting Fix (2025-11-06)
+Migrated from deprecated `middleware` convention to the new `proxy` convention in Next.js 16, and fixed AI agent date formatting issues.
+
+**Proxy Migration (Next.js 16):**
+- **File Created:** `src/proxy.ts` - Replaced `src/middleware.ts` following Next.js 16 convention
+- **Function Renamed:** Changed `export function middleware()` to `export function proxy()`
+- **Documentation Reference:** Followed official Next.js migration guide from https://nextjs.org/docs/messages/middleware-to-proxy
+- **Session Management:** Maintains same functionality with Supabase session refresh via `updateSession()`
+- **Config Unchanged:** Matcher configuration remains identical for route protection
+- **Warning Eliminated:** Removed deprecation warning: "The middleware file convention is deprecated. Please use proxy instead"
+
+**AI Agent Date Formatting Improvements:**
+- **System Prompt Enhanced:** Added explicit instructions for date formatting in Spanish (src/app/api/chat/route.ts:106, 170)
+- **Problem Fixed:** AI agent was showing literal placeholder text "[Fecha actual]" instead of actual dates
+- **Solution Implemented:**
+  - Added clear instructions to parse ISO 8601 timestamps (e.g., "2025-11-06T20:05:18.599Z")
+  - Specified format: "6 nov 2025" or "6 de noviembre de 2025"
+  - Provided Spanish month abbreviations: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic
+  - Explicitly prohibited use of placeholder text
+- **Context Provided:** System prompt now explains dates come from database in ISO format and must be converted
+
+**Database Debugging Enhancements:**
+- **Enhanced Logging:** Added comprehensive debug logs to `getExpenses()` function (src/utils/expenses.ts:42-67)
+- **Auth Status Tracking:** Logs user authentication state before each query
+- **Query Result Details:** Logs data count, error messages, codes, and hints
+- **Error Visibility:** Improved error messages with emojis (🔍, ✅, ❌) for better log readability
+- **Troubleshooting Aid:** Helps diagnose Supabase RLS and authentication issues
+
+**Migration Benefits:**
+- ✅ **Future-proof:** Adopts Next.js 16 recommended convention
+- ✅ **No Breaking Changes:** Functionality remains identical
+- ✅ **Clean Console:** Eliminates deprecation warnings in development
+- ✅ **Better UX:** Users see properly formatted dates in Spanish
+- ✅ **Maintainability:** Aligns with Next.js best practices
+
+**File Changes:**
+- `src/proxy.ts` - New file with proxy function (replaces middleware.ts)
+- `src/app/api/chat/route.ts` - Enhanced system prompts with date formatting instructions
+- `src/utils/expenses.ts` - Added debug logging for database queries
+
 ### Supabase Integration: Authentication & Database Migration (2025-11-06)
 Complete migration from local JSON file storage to Supabase for authentication and database persistence, enabling multi-tenant architecture.
 
 **Authentication System:**
 - **OAuth Integration:** Google OAuth via Supabase Auth with redirect flow
-- **Session Management:** Middleware-based session refresh and validation using `@supabase/ssr`
-- **Protected Routes:** Middleware at `src/middleware.ts` ensures authenticated access to protected pages
+- **Session Management:** Proxy-based session refresh and validation using `@supabase/ssr`
+- **Protected Routes:** Proxy at `src/proxy.ts` ensures authenticated access to protected pages (Next.js 16 convention)
 - **Sign-In Page:** `src/app/auth/signin/page.tsx` - Beautiful OAuth sign-in UI with loading states
 - **OAuth Callback:** `src/app/auth/callback/route.ts` - Handles OAuth redirect and token exchange
 - **Auth Button Component:** `src/components/AuthButton.tsx` - User profile dropdown with avatar and sign-out
@@ -229,9 +269,10 @@ Complete migration from local JSON file storage to Supabase for authentication a
 - **Browser Client (`src/lib/supabase/client.ts`):** For Client Components
   - Uses `createBrowserClient` from `@supabase/ssr`
   - Manages auth state changes and session persistence
-- **Middleware Client (`src/lib/supabase/middleware.ts`):** For session refresh
+- **Proxy Helper (`src/lib/supabase/middleware.ts`):** For session refresh
   - Updates session cookies on every request
   - Redirects unauthenticated users to sign-in page
+  - Called from `src/proxy.ts` (Next.js 16 proxy convention)
 
 **API Route Protection:**
 - **Authentication Check:** `src/app/api/chat/route.ts` now validates user session before processing
