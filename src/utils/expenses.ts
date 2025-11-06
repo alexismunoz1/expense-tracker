@@ -1,202 +1,208 @@
-import { writeFile, readFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
+import { createClient } from "@/lib/supabase/server";
 import { Expense, Category } from "@/types/expense";
 
-const expensesFilePath = join(process.cwd(), "data", "expenses.json");
-const categoriesFilePath = join(process.cwd(), "data", "categories.json");
-
-// Categorías predeterminadas
-const defaultCategories: Category[] = [
-  {
-    id: "alimentacion",
-    nombre: "Alimentación",
-    color: "#ff6b6b",
-    icono: "🍽️",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "transporte",
-    nombre: "Transporte",
-    color: "#4ecdc4",
-    icono: "🚗",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "entretenimiento",
-    nombre: "Entretenimiento",
-    color: "#45b7d1",
-    icono: "🎮",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "salud",
-    nombre: "Salud",
-    color: "#f9ca24",
-    icono: "🏥",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "educacion",
-    nombre: "Educación",
-    color: "#6c5ce7",
-    icono: "📚",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "servicios",
-    nombre: "Servicios",
-    color: "#a29bfe",
-    icono: "⚡",
-    fechaCreacion: new Date().toISOString(),
-  },
-  {
-    id: "otros",
-    nombre: "Otros",
-    color: "#74b9ff",
-    icono: "📦",
-    fechaCreacion: new Date().toISOString(),
-  },
-];
-
+/**
+ * Save a new expense to the database
+ * The user_id must be included in the expense object
+ * RLS will automatically ensure only the authenticated user can insert their own expenses
+ */
 export const saveExpense = async (expense: Expense): Promise<void> => {
   try {
-    let expenses: Expense[] = [];
+    const supabase = await createClient();
 
-    if (existsSync(expensesFilePath)) {
-      const data = await readFile(expensesFilePath, "utf-8");
-      expenses = JSON.parse(data);
-    } else {
-      const dir = join(process.cwd(), "data");
-      if (!existsSync(dir)) {
-        await mkdir(dir, { recursive: true });
-      }
+    const { error } = await supabase
+      .from('expenses')
+      .insert({
+        id: expense.id,
+        user_id: expense.user_id,
+        titulo: expense.titulo,
+        precio: expense.precio,
+        categoria: expense.categoria,
+        fecha: expense.fecha,
+      });
+
+    if (error) {
+      console.error("Supabase error saving expense:", error);
+      throw new Error("Error al guardar el gasto");
     }
-
-    expenses.push(expense);
-    await writeFile(expensesFilePath, JSON.stringify(expenses, null, 2));
   } catch (error) {
     console.error("Error saving expense:", error);
     throw new Error("Error al guardar el gasto");
   }
 };
 
+/**
+ * Get all expenses for the authenticated user
+ * RLS automatically filters to only return expenses where user_id = auth.uid()
+ */
 export const getExpenses = async (): Promise<Expense[]> => {
   try {
-    if (!existsSync(expensesFilePath)) {
-      return [];
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .order('fecha', { ascending: false });
+
+    if (error) {
+      console.error("Supabase error reading expenses:", error);
+      throw new Error("Error al leer los gastos");
     }
 
-    const data = await readFile(expensesFilePath, "utf-8");
-    const expenses = JSON.parse(data);
-
-    return expenses.sort((a: Expense, b: Expense) =>
-      new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
+    return data || [];
   } catch (error) {
     console.error("Error reading expenses:", error);
     throw new Error("Error al leer los gastos");
   }
 };
 
-// Funciones para categorías
-export const saveCategory = async (category: Category): Promise<void> => {
+/**
+ * Get a specific expense by ID
+ * RLS ensures only the owner can access their expense
+ */
+export const getExpenseById = async (id: string): Promise<Expense | null> => {
   try {
-    const categories: Category[] = await getCategories();
+    const supabase = await createClient();
 
-    // Verificar si la categoría ya existe
-    const existingIndex = categories.findIndex(cat => cat.id === category.id);
-    if (existingIndex !== -1) {
-      categories[existingIndex] = category;
-    } else {
-      categories.push(category);
-    }
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    const dir = join(process.cwd(), "data");
-    if (!existsSync(dir)) {
-      await mkdir(dir, { recursive: true });
-    }
-
-    await writeFile(categoriesFilePath, JSON.stringify(categories, null, 2));
-  } catch (error) {
-    console.error("Error saving category:", error);
-    throw new Error("Error al guardar la categoría");
-  }
-};
-
-export const getCategories = async (): Promise<Category[]> => {
-  try {
-    if (!existsSync(categoriesFilePath)) {
-      // Si no existe el archivo, crear uno con las categorías predeterminadas
-      const dir = join(process.cwd(), "data");
-      if (!existsSync(dir)) {
-        await mkdir(dir, { recursive: true });
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
       }
-      await writeFile(categoriesFilePath, JSON.stringify(defaultCategories, null, 2));
-      return defaultCategories;
+      console.error("Supabase error getting expense by ID:", error);
+      return null;
     }
 
-    const data = await readFile(categoriesFilePath, "utf-8");
-    const categories = JSON.parse(data);
-
-    return categories.sort((a: Category, b: Category) => a.nombre.localeCompare(b.nombre));
+    return data;
   } catch (error) {
-    console.error("Error reading categories:", error);
-    throw new Error("Error al leer las categorías");
-  }
-};
-
-export const getCategoryById = async (id: string): Promise<Category | null> => {
-  try {
-    const categories = await getCategories();
-    return categories.find(cat => cat.id === id) || null;
-  } catch (error) {
-    console.error("Error getting category by ID:", error);
+    console.error("Error getting expense by ID:", error);
     return null;
   }
 };
 
-export const updateExpense = async (id: string, updates: Partial<Omit<Expense, 'id' | 'fecha'>>): Promise<Expense | null> => {
+/**
+ * Update an existing expense
+ * RLS ensures only the owner can update their expense
+ */
+export const updateExpense = async (
+  id: string,
+  updates: Partial<Omit<Expense, 'id' | 'user_id' | 'created_at'>>
+): Promise<Expense | null> => {
   try {
-    let expenses: Expense[] = [];
+    const supabase = await createClient();
 
-    if (existsSync(expensesFilePath)) {
-      const data = await readFile(expensesFilePath, "utf-8");
-      expenses = JSON.parse(data);
-    } else {
-      throw new Error("No se encontró el archivo de gastos");
+    const { data, error } = await supabase
+      .from('expenses')
+      .update({
+        ...(updates.titulo && { titulo: updates.titulo }),
+        ...(updates.precio !== undefined && { precio: updates.precio }),
+        ...(updates.categoria && { categoria: updates.categoria }),
+        ...(updates.fecha && { fecha: updates.fecha }),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - either doesn't exist or not owned by user
+        return null;
+      }
+      console.error("Supabase error updating expense:", error);
+      throw new Error("Error al actualizar el gasto");
     }
 
-    // Buscar el gasto por ID
-    const expenseIndex = expenses.findIndex(expense => expense.id === id);
-    if (expenseIndex === -1) {
-      return null; // Gasto no encontrado
-    }
-
-    // Actualizar solo los campos proporcionados
-    const updatedExpense = {
-      ...expenses[expenseIndex],
-      ...updates
-    };
-
-    expenses[expenseIndex] = updatedExpense;
-
-    // Guardar los gastos actualizados
-    await writeFile(expensesFilePath, JSON.stringify(expenses, null, 2));
-
-    return updatedExpense;
+    return data;
   } catch (error) {
     console.error("Error updating expense:", error);
     throw new Error("Error al actualizar el gasto");
   }
 };
 
-export const getExpenseById = async (id: string): Promise<Expense | null> => {
+/**
+ * Get all categories (global, shared by all users)
+ * RLS allows all authenticated users to read categories
+ */
+export const getCategories = async (): Promise<Category[]> => {
   try {
-    const expenses = await getExpenses();
-    return expenses.find(expense => expense.id === id) || null;
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      console.error("Supabase error reading categories:", error);
+      throw new Error("Error al leer las categorías");
+    }
+
+    return data || [];
   } catch (error) {
-    console.error("Error getting expense by ID:", error);
+    console.error("Error reading categories:", error);
+    throw new Error("Error al leer las categorías");
+  }
+};
+
+/**
+ * Get a specific category by ID
+ */
+export const getCategoryById = async (id: string): Promise<Category | null> => {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      console.error("Supabase error getting category by ID:", error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error getting category by ID:", error);
     return null;
+  }
+};
+
+/**
+ * Save or update a category (admin only - not used by regular users)
+ * Categories are global and seeded via SQL migration
+ * This function is kept for backward compatibility but should rarely be used
+ */
+export const saveCategory = async (category: Category): Promise<void> => {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('categories')
+      .upsert({
+        id: category.id,
+        nombre: category.nombre,
+        color: category.color,
+        icono: category.icono,
+        fecha_creacion: category.fechaCreacion,
+      });
+
+    if (error) {
+      console.error("Supabase error saving category:", error);
+      throw new Error("Error al guardar la categoría");
+    }
+  } catch (error) {
+    console.error("Error saving category:", error);
+    throw new Error("Error al guardar la categoría");
   }
 };

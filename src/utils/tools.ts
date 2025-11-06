@@ -37,7 +37,7 @@ import {
 // === FUNCIONES AGRUPADAS ===
 
 // Gestor principal de gastos
-export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInput): Promise<GastoResponse> => {
+export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInput, userId: string): Promise<GastoResponse> => {
   try {
     // Validar acción
     if (!isValidGastoAccion(accion)) {
@@ -53,7 +53,7 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
         const camposFaltantes = CAMPOS_REQUERIDOS_CREAR_GASTO.filter(
           campo => !datos[campo as keyof typeof datos]
         );
-        
+
         if (camposFaltantes.length > 0) {
           return {
             success: false,
@@ -64,7 +64,7 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
           titulo: datos.titulo!,
           precio: datos.precio!,
           categoria: datos.categoria!,
-        });
+        }, userId);
 
       case 'obtener':
         const expenses = await getExpenses();
@@ -169,10 +169,11 @@ export const executeGuardarGasto = async ({
   titulo,
   precio,
   categoria,
-}: GuardarGastoInput): Promise<CrearGastoResponse> => {
+}: GuardarGastoInput, userId: string): Promise<CrearGastoResponse> => {
   try {
     const expense: Expense = {
       id: nanoid(),
+      user_id: userId,
       titulo,
       precio,
       categoria,
@@ -500,7 +501,7 @@ const inferCategory = (text: string): string => {
 export const executeProcesarImagenRecibo = async ({
   imagenBase64,
   mimeType,
-}: ProcesarImagenReciboInput) => {
+}: ProcesarImagenReciboInput, userId: string) => {
   let worker;
 
   try {
@@ -609,6 +610,7 @@ export const executeProcesarImagenRecibo = async ({
         // Descripción clara: crear el gasto automáticamente (comportamiento actual)
         const expense: Expense = {
           id: nanoid(),
+          user_id: userId,
           titulo: extractedData.description,
           precio: extractedData.amount,
           categoria: extractedData.category,

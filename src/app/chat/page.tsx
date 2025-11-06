@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
+import AuthButton from "@/components/AuthButton";
 import styles from "./chat.module.css";
 
 export default function Page() {
@@ -24,8 +25,11 @@ export default function Page() {
   return (
     <div className={styles.chatContainer}>
       <header className={styles.chatHeader}>
-        <h1>💰 Expense Tracker</h1>
-        <p>Gestiona tus gastos de forma inteligente</p>
+        <div>
+          <h1>💰 Expense Tracker</h1>
+          <p>Gestiona tus gastos de forma inteligente</p>
+        </div>
+        <AuthButton />
       </header>
 
       <div className={styles.messagesContainer}>

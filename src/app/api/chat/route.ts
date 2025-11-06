@@ -4,6 +4,7 @@ import { convertToModelMessages, streamText, UIMessage, stepCountIs, tool } from
 import { executeGestionarGasto, executeGestionarCategoria, executeProcesarImagenRecibo } from "@/utils/tools";
 import { gestionarGastoSchema, gestionarCategoriaSchema } from "@/schemas/tools";
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
 
 
 const model = xai("grok-3");
@@ -31,6 +32,19 @@ const requestSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
     // Validar request body
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
@@ -75,7 +89,7 @@ export async function POST(req: NextRequest) {
           processingResult = await executeProcesarImagenRecibo({
             imagenBase64: base64Data,
             mimeType,
-          });
+          }, userId);
         } catch (error) {
           console.error("Error al procesar imagen:", error);
           processingResult = {
@@ -131,7 +145,7 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
               description:
                 "Gestiona gastos (crear nuevos, obtener lista, modificar existentes). Incluye filtros avanzados para consultas específicas.",
               inputSchema: gestionarGastoSchema,
-              execute: executeGestionarGasto,
+              execute: async (input) => executeGestionarGasto(input, userId),
             }),
             gestionarCategoria: tool({
               description:
@@ -160,7 +174,7 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
           description:
             "Gestiona gastos (crear nuevos, obtener lista, modificar existentes). Incluye filtros avanzados para consultas específicas.",
           inputSchema: gestionarGastoSchema,
-          execute: executeGestionarGasto,
+          execute: async (input) => executeGestionarGasto(input, userId),
         }),
         gestionarCategoria: tool({
           description:

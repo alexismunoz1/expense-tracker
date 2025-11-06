@@ -14,7 +14,9 @@
   background: var(--gradient-header);
   color: var(--text-tertiary);
   padding: 1rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   box-shadow: 0 2px 10px var(--shadow-medium);
   border-bottom: 1px solid var(--border-secondary);
 }

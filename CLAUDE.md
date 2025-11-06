@@ -16,6 +16,14 @@ yarn start        # Start production server
 yarn lint         # Run ESLint directly (no longer using next lint)
 ```
 
+### Git Commit Guidelines
+
+When creating git commits, DO NOT include the following signatures or attributions:
+- "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+- "Co-Authored-By: Claude <noreply@anthropic.com>"
+
+Keep commit messages clean, professional, and focused on describing the changes without AI attribution.
+
 ## Technical Stack
 
 ### Core Framework
@@ -40,9 +48,18 @@ yarn lint         # Run ESLint directly (no longer using next lint)
 - **AI SDK React:** 2.0.87 for React hooks (useChat)
 - **AI SDK OpenAI:** 2.0.62 provider
 - **AI SDK xAI:** 2.0.31 provider (Grok-3 model)
-- **Zod:** 4.1.12 for schema validation
+- **Zod:** 4.1.8 for schema validation
 - **nanoid:** 5.1.6 for unique ID generation
 - **Tesseract.js:** 6.0.1 for OCR (Optical Character Recognition) on receipt images
+
+### Authentication & Database
+- **Supabase:** Complete authentication and database solution
+  - **@supabase/supabase-js:** 2.80.0 - Core Supabase client library
+  - **@supabase/ssr:** 0.7.0 - Server-side rendering helpers for Next.js
+  - **@supabase/auth-helpers-nextjs:** 0.10.0 - Next.js authentication utilities
+- **Authentication Methods:** OAuth with Google (configurable for additional providers)
+- **Database:** PostgreSQL via Supabase with Row Level Security (RLS)
+- **Session Management:** Middleware-based session refresh and validation
 
 ### React Compiler Configuration
 The project uses the stable React Compiler feature introduced in Next.js 16:
@@ -57,10 +74,12 @@ The project uses the stable React Compiler feature introduced in Next.js 16:
 The core of the application is an AI agent (currently using xAI's Grok-3 model) that processes natural language requests and executes tool calls to manage expenses.
 
 **Key Components:**
-- **API Route:** `src/app/api/chat/route.ts` - Handles streaming chat responses with tool execution
+- **API Route:** `src/app/api/chat/route.ts` - Handles streaming chat responses with tool execution and authentication
 - **Tool Definitions:** `src/schemas/tools.ts` - Zod schemas for AI tool inputs
 - **Tool Executors:** `src/utils/tools.ts` - Implementation of tool actions
-- **Data Layer:** `src/utils/expenses.ts` - File-based persistence using JSON
+- **Data Layer:** `src/utils/expenses.ts` - Supabase database persistence with RLS
+- **Authentication:** `src/lib/supabase/` - Supabase client configuration for server and browser
+- **Middleware:** `src/middleware.ts` - Session management and route protection
 
 ### Tool System Architecture
 
@@ -93,6 +112,7 @@ The AI agent has access to three main grouped tools:
 
 **Expense:**
 - id (nanoid-generated unique ID)
+- user_id (Supabase user UUID - for multi-tenancy)
 - titulo (description)
 - precio (amount)
 - categoria (category ID)
@@ -100,6 +120,7 @@ The AI agent has access to three main grouped tools:
 
 **Category:**
 - id (kebab-case from nombre)
+- user_id (Supabase user UUID - for multi-tenancy)
 - nombre (display name)
 - color (hex color)
 - icono (emoji)
@@ -107,20 +128,36 @@ The AI agent has access to three main grouped tools:
 
 ### Data Persistence
 
-Expenses and categories are stored as JSON files in the `data/` directory:
-- `data/expenses.json` - All expense records
-- `data/categories.json` - Category definitions (auto-initialized with defaults)
+Expenses and categories are stored in a **Supabase PostgreSQL database** with Row Level Security (RLS) policies:
 
-The system creates these files automatically on first use. All operations use async/await with `fs/promises` for non-blocking I/O.
+- **expenses** table - User-specific expense records with automatic RLS filtering
+- **categories** table - User-specific or shared category definitions
+
+**Key Features:**
+- **Row Level Security (RLS):** Automatically filters queries to only return data belonging to the authenticated user
+- **Multi-tenancy:** Each user has isolated data via `user_id` foreign key to `auth.users`
+- **Server-Side Client:** Uses `@supabase/ssr` for proper session handling in Next.js App Router
+- **Async/Await Operations:** All database operations use async/await for non-blocking I/O
+- **Type-Safe Queries:** TypeScript types ensure consistency between client and database schema
+
+**Client Configuration:**
+- **Server Components/API Routes:** `createClient()` from `src/lib/supabase/server.ts`
+- **Client Components:** `createClient()` from `src/lib/supabase/client.ts`
+- **Middleware:** Session refresh logic in `src/lib/supabase/middleware.ts`
 
 ### Frontend Architecture
 
 - **Chat Interface:** `src/app/chat/page.tsx` - Main conversational UI using `@ai-sdk/react`
+- **Authentication UI:**
+  - `src/app/auth/signin/page.tsx` - OAuth sign-in page with Google authentication
+  - `src/app/auth/callback/route.ts` - OAuth callback handler
+  - `src/components/AuthButton.tsx` - User profile dropdown with sign-out functionality
 - **Markdown Rendering:** Uses `react-markdown` with `remark-gfm` for formatting AI responses
 - **Streaming:** Real-time response streaming using Vercel AI SDK's `useChat` hook
 - **Transport:** Custom `DefaultChatTransport` for API communication
+- **Protected Routes:** Middleware ensures unauthenticated users are redirected to sign-in page
 
-The UI includes quick action buttons for common tasks and supports streaming responses with proper loading states and error handling.
+The UI includes quick action buttons for common tasks, supports streaming responses with proper loading states and error handling, and displays user authentication status.
 
 ### Type System
 
@@ -152,13 +189,88 @@ Currently uses xAI Grok-3 model. OpenAI integration code exists but is commented
 
 - The receipt image processing feature (`procesarImagenRecibo`) is **fully functional** with Tesseract.js OCR
 - **Smart Clarification System:** OCR automatically detects unclear descriptions and prompts users for clarification before creating expenses
-- UI includes working camera/gallery buttons for image upload (lines 58-65, 220-236 in chat/page.tsx)
+- **Authentication Required:** All API routes verify authentication via Supabase before processing requests
+- **Multi-tenant Architecture:** Data is isolated per user via RLS policies - each user only sees their own expenses
+- UI includes working camera/gallery buttons for image upload (chat/page.tsx)
 - All user-facing text and responses are in Spanish
 - The agent is configured to format expense tables in Markdown with specific column headers and formatting
 - OCR processing happens server-side in Node.js environment (not browser-based)
 - Images are filtered from message history before being sent to Grok-3 model (which doesn't support image inputs)
+- **Environment Variables Required:**
+  - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+  - `XAI_API_KEY` - xAI API key for Grok-3 model
 
 ## Recent Updates
+
+### Supabase Integration: Authentication & Database Migration (2025-11-06)
+Complete migration from local JSON file storage to Supabase for authentication and database persistence, enabling multi-tenant architecture.
+
+**Authentication System:**
+- **OAuth Integration:** Google OAuth via Supabase Auth with redirect flow
+- **Session Management:** Middleware-based session refresh and validation using `@supabase/ssr`
+- **Protected Routes:** Middleware at `src/middleware.ts` ensures authenticated access to protected pages
+- **Sign-In Page:** `src/app/auth/signin/page.tsx` - Beautiful OAuth sign-in UI with loading states
+- **OAuth Callback:** `src/app/auth/callback/route.ts` - Handles OAuth redirect and token exchange
+- **Auth Button Component:** `src/components/AuthButton.tsx` - User profile dropdown with avatar and sign-out
+
+**Database Migration:**
+- **From JSON to PostgreSQL:** Migrated from `data/expenses.json` and `data/categories.json` to Supabase PostgreSQL
+- **Row Level Security (RLS):** Implemented RLS policies to automatically filter data by authenticated user
+- **Multi-Tenancy:** Added `user_id` field to both `expenses` and `categories` tables
+- **Server-Side Queries:** All database operations use Supabase client from `src/lib/supabase/server.ts`
+- **Client-Side Queries:** Browser-based auth state management via `src/lib/supabase/client.ts`
+
+**Supabase Client Architecture:**
+- **Server Client (`src/lib/supabase/server.ts`):** For API routes and Server Components
+  - Uses `createServerClient` from `@supabase/ssr`
+  - Handles cookie-based session management
+  - Properly integrated with Next.js `cookies()` API
+- **Browser Client (`src/lib/supabase/client.ts`):** For Client Components
+  - Uses `createBrowserClient` from `@supabase/ssr`
+  - Manages auth state changes and session persistence
+- **Middleware Client (`src/lib/supabase/middleware.ts`):** For session refresh
+  - Updates session cookies on every request
+  - Redirects unauthenticated users to sign-in page
+
+**API Route Protection:**
+- **Authentication Check:** `src/app/api/chat/route.ts` now validates user session before processing
+- **User ID Propagation:** `userId` passed to all tool executors (`executeGestionarGasto`, `executeProcesarImagenRecibo`)
+- **401 Unauthorized:** Returns proper error response when session is invalid
+
+**Data Layer Updates (`src/utils/expenses.ts`):**
+- **saveExpense:** Inserts into `expenses` table with `user_id`
+- **getExpenses:** Queries filtered by RLS policy (automatically scoped to user)
+- **updateExpense:** Updates with automatic user verification via RLS
+- **deleteExpense:** Deletes with automatic user verification via RLS
+- **saveCategory:** Inserts into `categories` table with `user_id`
+- **getCategories:** Returns user-specific categories with RLS filtering
+
+**Type System Updates:**
+- **Expense type:** Added `user_id?: string` field (src/types/expense.ts)
+- **Category type:** Added `user_id?: string` field (src/types/expense.ts)
+- Optional fields to maintain backward compatibility during migration
+
+**Dependencies Added:**
+- `@supabase/supabase-js@2.80.0` - Core Supabase client
+- `@supabase/ssr@0.7.0` - SSR helpers for Next.js App Router
+- `@supabase/auth-helpers-nextjs@0.10.0` - Authentication utilities
+
+**Environment Variables:**
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key (public, safe for client-side)
+
+**Migration Benefits:**
+- ✅ **True multi-tenancy:** Each user has isolated data
+- ✅ **Scalable storage:** PostgreSQL handles concurrent users efficiently
+- ✅ **Built-in auth:** No need to implement custom authentication
+- ✅ **Real-time capabilities:** Foundation for future real-time features
+- ✅ **Secure by default:** RLS policies enforce data isolation at database level
+- ✅ **Production-ready:** Eliminates file-based storage limitations
+
+**Breaking Changes:**
+- Users must authenticate with Google OAuth before accessing the app
+- All existing data in JSON files is not automatically migrated (fresh start)
 
 ### User Clarification for Unclear Receipts & Turbopack Fixes (2025-11-04)
 Implemented intelligent receipt processing with user clarification and fixed critical Tesseract.js compatibility issues with Next.js 16 + Turbopack.
