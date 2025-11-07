@@ -38,13 +38,40 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/_next') &&
     !request.nextUrl.pathname.startsWith('/api/auth') &&
-    request.nextUrl.pathname !== '/'
+    request.nextUrl.pathname !== '/' &&
+    request.nextUrl.pathname !== '/onboarding'
   ) {
     // Redirect to sign-in page if not authenticated
     const url = request.nextUrl.clone()
     url.pathname = '/auth/signin'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Check if authenticated user needs onboarding
+  // Only check for protected routes (not auth pages or static assets)
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/_next') &&
+    !request.nextUrl.pathname.startsWith('/api') &&
+    request.nextUrl.pathname !== '/' &&
+    request.nextUrl.pathname !== '/onboarding'
+  ) {
+    // Check if user has completed onboarding (has user_profile)
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
+
+    // If no profile exists and not already on onboarding page, redirect to onboarding
+    if (profileError?.code === 'PGRST116' || !profileData) {
+      console.log('👤 User needs onboarding, redirecting...')
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
+      return NextResponse.redirect(url)
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

@@ -1,6 +1,6 @@
 import { createWorker } from "tesseract.js";
 import { nanoid } from "nanoid";
-import { Expense, Category } from "@/types/expense";
+import { Expense, Category, CurrencyCode } from "@/types/expense";
 import {
   GestionarGastoInput,
   GestionarCategoriaInput,
@@ -33,6 +33,8 @@ import {
   updateExpense,
   getExpenseById,
 } from "./expenses";
+import { getUserProfile } from "./user-profile";
+import { parseCurrencyFromText, formatCurrency } from "./currency";
 
 // === FUNCIONES AGRUPADAS ===
 
@@ -64,6 +66,7 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
           titulo: datos.titulo!,
           precio: datos.precio!,
           categoria: datos.categoria!,
+          divisa: datos.divisa,
         }, userId);
 
       case 'obtener':
@@ -98,6 +101,7 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
           id: datos.id,
           titulo: datos.titulo,
           precio: datos.precio,
+          divisa: datos.divisa,
           categoria: datos.categoria,
         });
 
@@ -169,23 +173,45 @@ export const executeGuardarGasto = async ({
   titulo,
   precio,
   categoria,
+  divisa,
 }: GuardarGastoInput, userId: string): Promise<CrearGastoResponse> => {
   try {
+    // Determinar la divisa a usar
+    let currency: CurrencyCode = 'USD'; // Fallback por defecto
+
+    // 1. Si se especificó divisa explícitamente, usar esa
+    if (divisa) {
+      currency = divisa as CurrencyCode;
+    } else {
+      // 2. Intentar detectar divisa en el título o descripción
+      const detectedCurrency = parseCurrencyFromText(titulo);
+      if (detectedCurrency) {
+        currency = detectedCurrency;
+      } else {
+        // 3. Usar la divisa preferida del usuario
+        const userProfile = await getUserProfile(userId);
+        if (userProfile) {
+          currency = userProfile.preferred_currency;
+        }
+      }
+    }
+
     const expense: Expense = {
       id: nanoid(),
       user_id: userId,
       titulo,
       precio,
+      currency,
       categoria,
       fecha: new Date().toISOString(),
     };
 
     await saveExpense(expense);
+
+    const formattedAmount = formatCurrency(precio, currency);
     return {
       success: true,
-      message: `Gasto "${titulo}" registrado exitosamente por $${precio.toFixed(
-        2
-      )} en la categoría ${categoria}`,
+      message: `Gasto "${titulo}" registrado exitosamente por ${formattedAmount} en la categoría ${categoria}`,
       expense,
     };
   } catch (error) {
@@ -273,6 +299,7 @@ export const executeModificarGasto = async ({
   id,
   titulo,
   precio,
+  divisa,
   categoria,
 }: ModificarGastoInput): Promise<ModificarGastoResponse> => {
   try {
@@ -294,9 +321,9 @@ export const executeModificarGasto = async ({
     }
 
     // Verificar que se proporciona al menos un campo para actualizar
-    const camposActualizacion = ['titulo', 'precio', 'categoria'] as const;
+    const camposActualizacion = ['titulo', 'precio', 'divisa', 'categoria'] as const;
     const camposProporcionados = camposActualizacion.filter(campo => {
-      const valor = { titulo, precio, categoria }[campo];
+      const valor = { titulo, precio, divisa, categoria }[campo];
       return valor !== undefined && valor !== null && valor !== '';
     });
 
@@ -308,7 +335,12 @@ export const executeModificarGasto = async ({
     }
 
     // Actualizar el gasto
-    const updatedExpense = await updateExpense(id, { titulo, precio, categoria });
+    const updatedExpense = await updateExpense(id, {
+      titulo,
+      precio,
+      currency: divisa as CurrencyCode | undefined,
+      categoria
+    });
 
     if (!updatedExpense) {
       return {
@@ -608,11 +640,16 @@ export const executeProcesarImagenRecibo = async ({
         return result;
       } else {
         // Descripción clara: crear el gasto automáticamente (comportamiento actual)
+        // Obtener la divisa preferida del usuario
+        const userProfile = await getUserProfile(userId);
+        const currency = userProfile?.preferred_currency || 'USD';
+
         const expense: Expense = {
           id: nanoid(),
           user_id: userId,
           titulo: extractedData.description,
           precio: extractedData.amount,
+          currency: currency,
           categoria: extractedData.category,
           fecha: new Date().toISOString(),
         };

@@ -13,8 +13,9 @@ export const gestionarGastoSchema = z.object({
     id: z.string().optional().describe("ID del gasto (requerido para modificar)"),
     titulo: z.string().optional().describe("Título o descripción del gasto"),
     precio: z.number().optional().describe("Precio del gasto en números"),
+    divisa: z.enum(['USD', 'ARS']).optional().describe("Divisa del gasto: USD (dólares) o ARS (pesos argentinos). Si no se especifica, se usa la divisa preferida del usuario."),
     categoria: z.string().optional().describe("ID de la categoría del gasto"),
-    
+
     // Para filtrar gastos al obtener
     filtros: z.object({
       categoria: z.string().optional(),
@@ -65,6 +66,10 @@ export const guardarGastoSchema = z.object({
     .number()
     .positive("El precio debe ser mayor a 0")
     .describe("Precio del gasto en números"),
+  divisa: z
+    .enum(['USD', 'ARS'])
+    .optional()
+    .describe("Divisa del gasto: USD (dólares) o ARS (pesos argentinos)"),
   categoria: z
     .string()
     .min(1, "La categoría es requerida")
@@ -89,6 +94,10 @@ export const modificarGastoSchema = z.object({
     .positive("El precio debe ser mayor a 0")
     .optional()
     .describe("Nuevo precio del gasto (opcional)"),
+  divisa: z
+    .enum(['USD', 'ARS'])
+    .optional()
+    .describe("Nueva divisa del gasto: USD o ARS (opcional)"),
   categoria: z
     .string()
     .optional()

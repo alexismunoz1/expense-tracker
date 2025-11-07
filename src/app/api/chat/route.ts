@@ -5,6 +5,7 @@ import { executeGestionarGasto, executeGestionarCategoria, executeProcesarImagen
 import { gestionarGastoSchema, gestionarCategoriaSchema } from "@/schemas/tools";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getUserProfile } from "@/utils/user-profile";
 
 
 const model = xai("grok-3");
@@ -44,6 +45,11 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = user.id;
+
+    // Get user profile to determine preferred currency
+    const userProfile = await getUserProfile(userId);
+    const userCurrency = userProfile?.preferred_currency || 'USD';
+    const currencyName = userCurrency === 'USD' ? 'dólares (USD)' : 'pesos argentinos (ARS)';
 
     // Validar request body
     const body = await req.json();
@@ -103,7 +109,33 @@ Por favor, intenta nuevamente o registra el gasto manualmente proporcionando los
 
         // Determinar el system prompt basado en si se requiere clarificación
         let systemPrompt =
-          "Eres un asistente de gastos personal. Usa formato Markdown para respuestas.\n\n**HERRAMIENTAS DISPONIBLES:**\n• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')\n• gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')\n\nCategorías: alimentacion, transporte, entretenimiento, salud, educacion, servicios, otros\n\n**FORMATO DE TABLAS DE GASTOS:**\nCuando muestres gastos en tablas, usa este formato:\n\n| Descripción | Precio (USD) | Categoría | Fecha |\n|-------------|--------------|-----------|-------|\n| Nombre del gasto | $XX.XX | 🏷️ Categoría | DD Mes YYYY |\n\n**IMPORTANTE - FORMATO DE FECHAS:**\n- Las fechas vienen en formato ISO 8601 (ej: \"2025-11-06T20:05:18.599Z\")\n- Debes convertirlas a formato legible en español: \"6 nov 2025\" o \"6 de noviembre de 2025\"\n- NUNCA uses placeholder como \"[Fecha actual]\" - SIEMPRE muestra la fecha real parseada\n- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic";
+          `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
+
+**HERRAMIENTAS DISPONIBLES:**
+• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
+• gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')
+
+Categorías: alimentacion, transporte, entretenimiento, salud, educacion, servicios, otros
+
+**CONFIGURACIÓN DE DIVISA:**
+- Divisa preferida del usuario: ${currencyName}
+- El usuario puede especificar una divisa diferente al crear un gasto (ej: "50 USD" o "1000 ARS")
+- Si el usuario NO especifica divisa, usa su divisa preferida (${userCurrency})
+- Divisas disponibles: USD (dólares estadounidenses), ARS (pesos argentinos)
+- Cuando uses la herramienta gestionarGasto, incluye el campo 'divisa' solo si el usuario especifica una divisa diferente a ${userCurrency}
+
+**FORMATO DE TABLAS DE GASTOS:**
+Cuando muestres gastos en tablas, usa este formato:
+
+| Descripción | Precio | Categoría | Fecha |
+|-------------|--------|-----------|-------|
+| Nombre del gasto | $XX.XX USD | 🏷️ Categoría | DD Mes YYYY |
+
+**IMPORTANTE - FORMATO DE FECHAS:**
+- Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
+- Debes convertirlas a formato legible en español: "6 nov 2025" o "6 de noviembre de 2025"
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE muestra la fecha real parseada
+- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic`;
 
         // Si se requiere clarificación, agregar instrucciones especiales
         if (processingResult.requiresClarification && processingResult.extractedData) {
@@ -167,7 +199,48 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
     const result = streamText({
       model,
       system:
-        "Eres un asistente de gastos personal. Usa formato Markdown para respuestas.\n\n**HERRAMIENTAS DISPONIBLES:**\n• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')\n• gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')\n• procesarImagenRecibo: analizar fotos de recibos con IA para extraer datos y crear gastos automáticamente\n\n**IMPORTANTE:** Cuando el usuario envíe una imagen de recibo, factura o ticket, usa automáticamente la herramienta 'procesarImagenRecibo' para analizarla y crear el gasto.\n\n**MANEJO DE ACLARACIONES DE RECIBOS:**\nSi en un mensaje anterior procesaste un recibo pero el nombre no estaba claro:\n1. Revisa tu mensaje anterior para encontrar el monto y la categoría detectados\n2. Cuando el usuario responda con un nombre/descripción, usa 'gestionarGasto' con acción 'crear'\n3. Extrae el precio y categoría de tu mensaje anterior\n4. Usa el título que proporcionó el usuario\n5. Confirma que el gasto fue registrado exitosamente con todos los detalles\n\nCategorías: alimentacion, transporte, entretenimiento, salud, educacion, servicios, otros\n\n**FORMATO DE TABLAS DE GASTOS:**\nCuando muestres gastos en tablas, usa este formato:\n\n| Descripción | Precio (USD) | Categoría | Fecha |\n|-------------|--------------|-----------|-------|\n| Nombre del gasto | $XX.XX | 🏷️ Categoría | DD Mes YYYY |\n\n**IMPORTANTE - FORMATO DE FECHAS:**\n- Las fechas vienen en formato ISO 8601 (ej: \"2025-11-06T20:05:18.599Z\")\n- Debes convertirlas a formato legible en español: \"6 nov 2025\" o \"6 de noviembre de 2025\"\n- NUNCA uses placeholder como \"[Fecha actual]\" - SIEMPRE muestra la fecha real parseada\n- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic",
+        `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
+
+**HERRAMIENTAS DISPONIBLES:**
+• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
+• gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')
+• procesarImagenRecibo: analizar fotos de recibos con IA para extraer datos y crear gastos automáticamente
+
+**IMPORTANTE:** Cuando el usuario envíe una imagen de recibo, factura o ticket, usa automáticamente la herramienta 'procesarImagenRecibo' para analizarla y crear el gasto.
+
+**MANEJO DE ACLARACIONES DE RECIBOS:**
+Si en un mensaje anterior procesaste un recibo pero el nombre no estaba claro:
+1. Revisa tu mensaje anterior para encontrar el monto y la categoría detectados
+2. Cuando el usuario responda con un nombre/descripción, usa 'gestionarGasto' con acción 'crear'
+3. Extrae el precio y categoría de tu mensaje anterior
+4. Usa el título que proporcionó el usuario
+5. Confirma que el gasto fue registrado exitosamente con todos los detalles
+
+Categorías: alimentacion, transporte, entretenimiento, salud, educacion, servicios, otros
+
+**CONFIGURACIÓN DE DIVISA:**
+- Divisa preferida del usuario: ${currencyName}
+- El usuario puede especificar una divisa diferente al crear un gasto (ej: "50 USD" o "1000 ARS")
+- Si el usuario NO especifica divisa, usa su divisa preferida (${userCurrency})
+- Divisas disponibles: USD (dólares estadounidenses), ARS (pesos argentinos)
+- Cuando uses la herramienta gestionarGasto, incluye el campo 'divisa' solo si el usuario especifica una divisa diferente a ${userCurrency}
+- Ejemplos de detección:
+  - "gasté $50 en comida" → usa ${userCurrency} (sin especificar divisa en tool)
+  - "gasté 50 USD en Amazon" → usa USD (especificar divisa: 'USD' en tool)
+  - "gasté 1000 pesos en el super" → usa ARS (especificar divisa: 'ARS' en tool)
+
+**FORMATO DE TABLAS DE GASTOS:**
+Cuando muestres gastos en tablas, usa este formato:
+
+| Descripción | Precio | Categoría | Fecha |
+|-------------|--------|-----------|-------|
+| Nombre del gasto | $XX.XX USD | 🏷️ Categoría | DD Mes YYYY |
+
+**IMPORTANTE - FORMATO DE FECHAS:**
+- Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
+- Debes convertirlas a formato legible en español: "6 nov 2025" o "6 de noviembre de 2025"
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE muestra la fecha real parseada
+- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic`,
       messages: convertToModelMessages(messagesWithoutImages),
       tools: {
         gestionarGasto: tool({

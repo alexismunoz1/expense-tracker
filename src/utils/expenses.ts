@@ -17,6 +17,7 @@ export const saveExpense = async (expense: Expense): Promise<void> => {
         user_id: expense.user_id,
         titulo: expense.titulo,
         precio: expense.precio,
+        currency: expense.currency,
         categoria: expense.categoria,
         fecha: expense.fecha,
       });
@@ -118,6 +119,7 @@ export const updateExpense = async (
       .update({
         ...(updates.titulo && { titulo: updates.titulo }),
         ...(updates.precio !== undefined && { precio: updates.precio }),
+        ...(updates.currency && { currency: updates.currency }),
         ...(updates.categoria && { categoria: updates.categoria }),
         ...(updates.fecha && { fecha: updates.fecha }),
       })

@@ -27,6 +27,7 @@ export interface DatosGasto {
   id?: string;
   titulo?: string;
   precio?: number;
+  divisa?: string;
   categoria?: string;
   filtros?: FiltrosGasto;
 }
@@ -127,6 +128,7 @@ export const CAMPOS_REQUERIDOS_MODIFICAR_GASTO = ["id"] as const;
 export interface GuardarGastoInput {
   titulo: string;
   precio: number;
+  divisa?: string;
   categoria: string;
 }
 
@@ -142,6 +144,7 @@ export interface ModificarGastoInput {
   id: string;
   titulo?: string;
   precio?: number;
+  divisa?: string;
   categoria?: string;
 }
 

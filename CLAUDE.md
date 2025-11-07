@@ -96,6 +96,10 @@ The AI agent has access to three main grouped tools:
    - Actions: `crear` (create), `obtener` (get), `modificar` (modify)
    - Handles creating expenses, filtering/querying expenses, and updating existing expenses
    - Supports advanced filtering by category, date ranges
+   - **Multi-Currency Support:** Accepts optional `divisa` parameter (USD or ARS)
+     - Priority: explicit divisa → detected from text → user's preferred currency → USD fallback
+     - Uses `parseCurrencyFromText()` for intelligent currency detection
+     - Formatting with `formatCurrency()` for display
 
 2. **gestionarCategoria** (Category Management)
    - Actions: `crear` (create), `obtener` (get)
@@ -122,6 +126,7 @@ The AI agent has access to three main grouped tools:
 - user_id (Supabase user UUID - for multi-tenancy)
 - titulo (description)
 - precio (amount)
+- currency (CurrencyCode: USD or ARS)
 - categoria (category ID)
 - fecha (ISO 8601 timestamp)
 
@@ -132,6 +137,12 @@ The AI agent has access to three main grouped tools:
 - color (hex color)
 - icono (emoji)
 - fechaCreacion (ISO timestamp)
+
+**UserProfile:**
+- user_id (Supabase user UUID)
+- preferred_currency (CurrencyCode: USD or ARS)
+- created_at (ISO timestamp)
+- updated_at (ISO timestamp)
 
 ### Data Persistence
 
@@ -167,6 +178,11 @@ Expenses and categories are stored in a **Supabase PostgreSQL database** with Ro
   - Actions: `Button`, `IconButton` with variants (solid, soft, surface, outline, ghost)
   - Feedback: `Spinner`, `Callout` for loading and errors
   - Messages: `Card` components with dynamic styling
+- **Onboarding Flow:** `src/app/onboarding/page.tsx` - First-time user setup
+  - Currency selection with `Select.Root` component
+  - Flags and currency names from `CURRENCY_INFO`
+  - Creates user profile via `/api/onboarding`
+  - Redirects to chat after completion
 - **Authentication UI:**
   - `src/app/auth/signin/page.tsx` - OAuth sign-in with Radix `Card`, `Button`, `Callout`
   - `src/app/auth/callback/route.ts` - OAuth callback handler
@@ -180,17 +196,22 @@ Expenses and categories are stored in a **Supabase PostgreSQL database** with Ro
 - **Streaming:** Real-time response streaming using Vercel AI SDK's `useChat` hook
 - **Transport:** Custom `DefaultChatTransport` for API communication
 - **Protected Routes:** Proxy ensures unauthenticated users are redirected to sign-in page
+- **Onboarding Gate:** Authenticated users without profile are redirected to `/onboarding`
 
 The UI features accessible components with built-in keyboard navigation, responsive design with Radix breakpoints, and a cohesive dark mode theme.
 
 ### Type System
 
 Types are centralized and shared between client and server:
-- `src/types/expense.ts` - Core data types (Expense, Category)
+- `src/types/expense.ts` - Core data types (Expense, Category, UserProfile)
+  - `CurrencyCode` - Union type for supported currencies (USD | ARS)
+  - `CURRENCY_INFO` - Currency metadata with codes, names, symbols, and flag emojis
+  - `UserProfile` - User preferences including preferred currency
 - `src/types/tools.ts` - Tool inputs, responses, constants, validation utilities, and OCR types
   - `ExtractedOcrData` - Structured OCR extraction results (amount, description, category, confidence)
   - `OcrResult` - Complete OCR processing result with clarification flags
   - `isDescriptionUnclear()` - Validation function for description quality assessment
+  - `GuardarGastoInput`, `ModificarGastoInput` - Now include optional `divisa` field
 - Constants defined for actions (GASTO_ACCIONES, CATEGORIA_ACCIONES) ensure type safety
 
 ### AI Model Configuration
@@ -201,6 +222,11 @@ Currently uses xAI Grok-3 model. OpenAI integration code exists but is commented
 - `stopWhen: stepCountIs(4)` - Limits tool execution chains to prevent infinite loops
 - System prompt defines Markdown table format for expense displays
 - **Dynamic System Prompt Enrichment:** When OCR requires clarification, system prompt is enhanced with extracted data context
+- **User Currency Awareness:** System prompt includes user's preferred currency and instructions for multi-currency handling
+  - Loads user profile to get `preferred_currency` (USD or ARS)
+  - Instructs AI when to include `divisa` parameter in tool calls
+  - Provides currency detection keywords (dollars, dólares, pesos, USD, ARS)
+  - Formats expense tables without hardcoded currency symbols
 - **Image Filtering:** `removeImagesFromMessages()` helper removes images from message history before sending to Grok-3
 - Automatic receipt processing: Images uploaded via UI are processed with Tesseract OCR before AI model interaction
 - Grok-3 model receives only text (no image support), OCR results are injected as assistant message
@@ -225,7 +251,181 @@ Currently uses xAI Grok-3 model. OpenAI integration code exists but is commented
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
   - `XAI_API_KEY` - xAI API key for Grok-3 model
 
+### Currency Utilities (`src/utils/currency.ts`)
+
+Comprehensive currency handling utilities:
+
+**Formatting Functions:**
+- `formatCurrency(amount, currency)` - Full locale-aware formatting with currency code
+  - Uses es-AR locale for ARS, es-MX for USD
+  - Returns format like "$1,234.56 USD" or "$1.234,56 ARS"
+  - Appends currency code to disambiguate (both use $ symbol)
+- `formatCurrencyShort(amount, currency)` - Shorter format for tables
+- `getCurrencySymbol(currency)` - Returns $ for both currencies
+- `getCurrencyName(currency)` - Returns full name in Spanish
+- `getCurrencyFlag(currency)` - Returns flag emoji (🇺🇸 or 🇦🇷)
+
+**Parsing Functions:**
+- `parseCurrencyFromText(text)` - Intelligent currency detection from natural language
+  - Detects: "USD", "dólar", "dollar", "US$", etc. → USD
+  - Detects: "ARS", "peso", "pesos argentinos", "$arg", etc. → ARS
+  - Returns `null` if no explicit currency mentioned
+- `extractAmountFromText(text)` - Extracts numeric amounts from text
+  - Handles US format: 1,234.56
+  - Handles AR format: 1.234,56
+  - Removes currency symbols and text
+- `isValidCurrency(code)` - Type guard for CurrencyCode validation
+
+**Used By:**
+- AI agent for displaying formatted amounts in responses
+- Tool executors for determining currency from user input
+- Onboarding flow for currency selection
+
+### User Profile Management (`src/utils/user-profile.ts`)
+
+User preferences and onboarding state management:
+
+**Core Functions:**
+- `getUserProfile(userId)` - Fetches profile from `user_profiles` table
+- `createUserProfile(userId, preferredCurrency)` - Creates new profile with currency preference
+- `updateUserCurrency(userId, preferredCurrency)` - Updates user's currency preference
+- `getOrCreateUserProfile(userId, defaultCurrency)` - Helper that ensures profile exists
+- `hasCompletedOnboarding(userId)` - Checks if user has profile (completed onboarding)
+
+**Database Integration:**
+- Queries `user_profiles` table via Supabase client
+- Uses RLS policies for automatic user filtering
+- Timestamps: `created_at`, `updated_at` in ISO format
+- Handles PGRST116 error code (no rows returned)
+
+**Usage:**
+- Called by proxy middleware to enforce onboarding gate
+- Used by chat API route to load user's preferred currency
+- Provides default currency for expense creation
+
 ## Recent Updates
+
+### Multi-Currency Support & User Onboarding (2025-11-07)
+Implemented comprehensive multi-currency system with USD and ARS support, plus first-time user onboarding flow.
+
+**Multi-Currency Features:**
+
+1. **Currency Types & Constants (src/types/expense.ts)**
+   - `CurrencyCode` type: `'USD' | 'ARS'`
+   - `CURRENCY_INFO` object with metadata:
+     - code: Currency code
+     - name: Full name in Spanish ("Dólares estadounidenses", "Pesos argentinos")
+     - symbol: $ (same for both)
+     - flag: 🇺🇸 or 🇦🇷 emoji
+   - `UserProfile` interface with `preferred_currency` field
+
+2. **Currency Utilities (src/utils/currency.ts)**
+   - **Formatting:**
+     - `formatCurrency()` - Locale-aware formatting with currency code appended
+     - `formatCurrencyShort()` - Shorter format for tables
+     - Helper functions for symbols, names, and flags
+   - **Parsing:**
+     - `parseCurrencyFromText()` - Detects USD/ARS from natural language
+     - `extractAmountFromText()` - Extracts numbers from text (both US and AR formats)
+     - `isValidCurrency()` - Type guard validation
+
+3. **User Profile Management (src/utils/user-profile.ts)**
+   - CRUD operations for `user_profiles` table
+   - `getUserProfile()`, `createUserProfile()`, `updateUserCurrency()`
+   - `getOrCreateUserProfile()` - Helper for ensuring profile exists
+   - `hasCompletedOnboarding()` - Check for profile existence
+
+4. **Onboarding Flow**
+   - **Page:** `src/app/onboarding/page.tsx`
+     - Currency selection with Radix `Select` component
+     - Displays currency flags, names, and codes
+     - Loading states with `Spinner`
+     - Error handling with `Callout`
+     - Redirects to `/chat` after completion
+   - **API Route:** `src/app/api/onboarding/route.ts`
+     - Validates request with Zod schema
+     - Creates user profile with selected currency
+     - Returns 401 if not authenticated
+
+5. **Proxy Middleware Enhancement (src/lib/supabase/middleware.ts)**
+   - **Onboarding Gate:** Checks if authenticated user has profile
+   - Queries `user_profiles` table after session validation
+   - Redirects to `/onboarding` if profile missing (PGRST116 error)
+   - Allows access to `/onboarding` and auth routes without profile
+   - Maintains existing session refresh functionality
+
+6. **Expense Schema Updates (src/schemas/tools.ts)**
+   - Added `divisa` parameter to `gestionarGastoSchema`:
+     - Optional `z.enum(['USD', 'ARS'])`
+     - Description explains fallback to user's preferred currency
+   - Added to `guardarGastoSchema` and `modificarGastoSchema`
+   - All expense operations support currency specification
+
+7. **Tool Executor Updates (src/utils/tools.ts)**
+   - **Currency Detection Priority (in executeGuardarGasto):**
+     1. Explicit `divisa` parameter from user
+     2. Auto-detected from `titulo` via `parseCurrencyFromText()`
+     3. User's `preferred_currency` from profile
+     4. Fallback to USD
+   - **Formatted Output:** Uses `formatCurrency()` in success messages
+   - **Modify Support:** `executeModificarGasto()` accepts and updates currency
+   - **OCR Integration:** `executeProcesarImagenRecibo()` uses user's preferred currency for expenses
+
+8. **AI System Prompt Enhancement (src/app/api/chat/route.ts)**
+   - Loads user profile to get `preferred_currency`
+   - **Dynamic Instructions:**
+     - Informs AI of user's default currency
+     - Explains when to include `divisa` in tool calls
+     - Provides currency detection keywords (dólares, pesos, USD, ARS)
+     - Instructs to format tables without hardcoded currency symbols
+   - **Currency Name in Spanish:** Displayed as "dólares (USD)" or "pesos argentinos (ARS)"
+   - Both base and OCR-enriched system prompts include currency context
+
+9. **Data Layer Updates (src/utils/expenses.ts)**
+   - `saveExpense()`: Saves `currency` field to database
+   - `updateExpense()`: Supports currency updates via spread operator
+   - Expense interface now requires `currency: CurrencyCode` field
+
+**User Experience Flow:**
+1. User signs in with Google OAuth
+2. Proxy checks for user profile
+3. If no profile → Redirect to `/onboarding`
+4. User selects preferred currency (USD or ARS)
+5. Profile created in `user_profiles` table
+6. User redirected to `/chat` to start using the app
+7. All expenses default to user's preferred currency
+8. User can override currency by mentioning "dólares" or "pesos" in messages
+9. AI automatically detects currency intent and includes `divisa` parameter
+10. Expense amounts displayed with proper formatting and currency code
+
+**Database Schema:**
+- **New Table:** `user_profiles`
+  - user_id (UUID, FK to auth.users)
+  - preferred_currency (text: USD or ARS)
+  - created_at (timestamp)
+  - updated_at (timestamp)
+- **Updated Table:** `expenses`
+  - Added `currency` column (text: USD or ARS)
+
+**Benefits:**
+- ✅ True multi-currency support for international users
+- ✅ Intelligent currency detection from natural language
+- ✅ User preferences persist across sessions
+- ✅ First-time user experience with onboarding
+- ✅ Flexible per-expense currency override
+- ✅ Proper locale-aware formatting
+- ✅ Disambiguates USD vs ARS (both use $ symbol)
+
+**Validation:**
+- ✅ Onboarding flow redirects correctly
+- ✅ Profile created with selected currency
+- ✅ Chat loads user's preferred currency
+- ✅ Currency detection from text works
+- ✅ Expenses saved with correct currency
+- ✅ Formatted amounts display properly
+- ✅ AI includes currency in tool calls when needed
+
+---
 
 ### Radix UI Design System Migration (2025-11-07)
 Complete migration to Radix UI Themes for a modern, accessible design system with focus on WCAG 2.1 AA compliance.
@@ -416,9 +616,13 @@ Complete migration from local JSON file storage to Supabase for authentication a
 - **Browser Client (`src/lib/supabase/client.ts`):** For Client Components
   - Uses `createBrowserClient` from `@supabase/ssr`
   - Manages auth state changes and session persistence
-- **Proxy Helper (`src/lib/supabase/middleware.ts`):** For session refresh
+- **Proxy Helper (`src/lib/supabase/middleware.ts`):** For session refresh and onboarding gate
   - Updates session cookies on every request
   - Redirects unauthenticated users to sign-in page
+  - **Onboarding Enforcement:** Checks for user profile existence
+    - Queries `user_profiles` table for authenticated users
+    - Redirects to `/onboarding` if profile doesn't exist (PGRST116 error)
+    - Allows access to `/onboarding` and auth routes without profile
   - Called from `src/proxy.ts` (Next.js 16 proxy convention)
 
 **API Route Protection:**
@@ -427,17 +631,19 @@ Complete migration from local JSON file storage to Supabase for authentication a
 - **401 Unauthorized:** Returns proper error response when session is invalid
 
 **Data Layer Updates (`src/utils/expenses.ts`):**
-- **saveExpense:** Inserts into `expenses` table with `user_id`
+- **saveExpense:** Inserts into `expenses` table with `user_id` and `currency`
 - **getExpenses:** Queries filtered by RLS policy (automatically scoped to user)
-- **updateExpense:** Updates with automatic user verification via RLS
+- **updateExpense:** Updates with automatic user verification via RLS, supports currency updates
 - **deleteExpense:** Deletes with automatic user verification via RLS
 - **saveCategory:** Inserts into `categories` table with `user_id`
 - **getCategories:** Returns user-specific categories with RLS filtering
 
 **Type System Updates:**
-- **Expense type:** Added `user_id?: string` field (src/types/expense.ts)
+- **Expense type:** Added `user_id?: string` and `currency: CurrencyCode` fields (src/types/expense.ts)
 - **Category type:** Added `user_id?: string` field (src/types/expense.ts)
-- Optional fields to maintain backward compatibility during migration
+- **UserProfile type:** New interface for user preferences
+- **CurrencyCode type:** Union type for USD | ARS
+- **CURRENCY_INFO:** Metadata object with currency details (name, symbol, flag)
 
 **Dependencies Added:**
 - `@supabase/supabase-js@2.80.0` - Core Supabase client
