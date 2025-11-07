@@ -1,2 +1,2 @@
-export * from "./messageUtils";
-export * from "./quickActions";
+export * from "./message-utils";
+export * from "./quick-actions";

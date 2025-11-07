@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Box } from "@radix-ui/themes";
-import { ChatMessage } from "./ChatMessage";
+import { ChatMessage } from "./chat-message";
 import type { Message } from "../types";
 
 interface ChatMessageListProps {

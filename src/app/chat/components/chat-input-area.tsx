@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { Box, Flex, TextField, IconButton } from "@radix-ui/themes";
 import { ImageIcon } from "@radix-ui/react-icons";
-import { HiddenFileInputs } from "./HiddenFileInputs";
-import { ChatSubmitButton } from "./ChatSubmitButton";
+import { HiddenFileInputs } from "./hidden-file-inputs";
+import { ChatSubmitButton } from "./chat-submit-button";
 import type { ChatStatus } from "../types";
 
 const CONTAINER_STYLE = {

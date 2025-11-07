@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Flex, Text, Card } from "@radix-ui/themes";
-import { MessageText } from "./MessageText";
-import { MessageImage } from "./MessageImage";
+import { MessageText } from "./message-text";
+import { MessageImage } from "./message-image";
 import { getImageParts } from "../utils";
 import type { Message } from "../types";
 

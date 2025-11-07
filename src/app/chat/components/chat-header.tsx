@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Box, Flex } from "@radix-ui/themes";
-import AuthButton from "@/components/AuthButton";
+import AuthButton from "@/components/auth-button";
 
 const HEADER_STYLE = {
   background: "var(--accent-9)",

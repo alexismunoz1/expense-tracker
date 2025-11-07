@@ -1,2 +1,2 @@
-export * from "./useFileUpload";
-export * from "./useChatMessages";
+export * from "./use-file-upload";
+export * from "./use-chat-messages";
