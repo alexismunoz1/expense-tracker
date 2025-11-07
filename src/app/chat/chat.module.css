@@ -470,6 +470,25 @@
 }
 
 /* Contenedor responsivo para tablas */
+.responsiveTable {
+  margin: 1em 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tabla con scroll horizontal en móvil */
+.desktopTable {
+  display: block;
+  width: 100%;
+}
+
+/* En móvil: forzar ancho mínimo para scroll horizontal */
+@media (max-width: 768px) {
+  .desktopTable {
+    min-width: 600px;
+  }
+}
+
 .messageText .table-container {
   overflow-x: auto;
   margin: 1em 0;

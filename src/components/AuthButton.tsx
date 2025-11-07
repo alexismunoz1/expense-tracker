@@ -56,13 +56,20 @@ export default function AuthButton() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
         <Flex align="center" gap="3" style={{ cursor: "pointer" }}>
+          <Avatar
+            size="1"
+            radius="full"
+            src={user.user_metadata?.avatar_url}
+            fallback={initials}
+            color="indigo"
+          />
           <Flex
             direction="column"
-            align="end"
+            align="start"
             gap="1"
             display={{ initial: "none", sm: "flex" }}
           >
-            <Text size="2" weight="medium">
+            <Text size="1" weight="medium">
               {displayName}
             </Text>
             <Text size="1" color="gray">
@@ -70,13 +77,6 @@ export default function AuthButton() {
             </Text>
           </Flex>
 
-          <Avatar
-            size="3"
-            radius="full"
-            src={user.user_metadata?.avatar_url}
-            fallback={initials}
-            color="indigo"
-          />
         </Flex>
       </DropdownMenu.Trigger>
 

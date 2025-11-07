@@ -58,6 +58,7 @@ Keep commit messages clean, professional, and focused on describing the changes 
 - **Zod:** 4.1.8 for schema validation
 - **nanoid:** 5.1.6 for unique ID generation
 - **Tesseract.js:** 6.0.1 for OCR (Optical Character Recognition) on receipt images
+- **server-only:** 0.0.1 for server-side code protection
 
 ### Authentication & Database
 - **Supabase:** Complete authentication and database solution
@@ -172,33 +173,71 @@ Expenses and categories are stored in a **Supabase PostgreSQL database** with Ro
   - appearance: dark (default)
   - radius: medium
   - scaling: 100%
-- **Chat Interface:** `src/app/chat/page.tsx` - Conversational UI with Radix components
-  - Layout: `Flex`, `Box` for declarative positioning
-  - Input: `TextField.Root` with integrated states
-  - Actions: `Button`, `IconButton` with variants (solid, soft, surface, outline, ghost)
-  - Feedback: `Spinner`, `Callout` for loading and errors
-  - Messages: `Card` components with dynamic styling
+
+- **Chat Interface:** Modular architecture with separation of concerns
+  - **Page Component:** `src/app/chat/page.tsx` - Orchestrates the chat UI (~100 lines, down from 450+)
+  - **Custom Hooks:** `src/app/chat/hooks/`
+    - `useChatMessages.ts` - Manages AI chat state with type-safe wrapper around `useChat`
+    - `useFileUpload.ts` - Handles file uploads (camera/gallery) with ref and state management
+  - **Modular Components:** `src/app/chat/components/`
+    - `ChatHeader.tsx` - Top navigation with app title
+    - `WelcomeScreen.tsx` - Initial state with quick actions
+    - `ChatMessageList.tsx` - Message container with auto-scroll
+    - `ChatMessage.tsx` - Individual message renderer
+    - `MessageText.tsx` - Markdown rendering with `react-markdown`
+    - `MessageImage.tsx` - Image attachment display
+    - `ChatLoadingState.tsx` - Loading spinner state
+    - `ChatErrorDisplay.tsx` - Error message display
+    - `ImagePreview.tsx` - Selected image preview before sending
+    - `ChatInputArea.tsx` - Input field with file upload buttons
+    - `ChatSubmitButton.tsx` - Send button with loading state
+    - `HiddenFileInputs.tsx` - File input refs for camera/gallery
+  - **Type Definitions:** `src/app/chat/types/chat.types.ts`
+    - `Message`, `MessagePart`, `MessageRole` - Chat message structure
+    - `ChatStatus` - Chat state: ready | submitted | streaming
+    - `SendMessageParams` - Message submission parameters
+    - `QuickAction` - Welcome screen action configuration
+  - **Utilities:** `src/app/chat/utils/messageUtils.ts`
+    - Helper functions for message processing
+  - **Radix UI Components Used:**
+    - Layout: `Flex`, `Box` for declarative positioning
+    - Input: `TextField.Root` with integrated states
+    - Actions: `Button`, `IconButton` with variants
+    - Feedback: `Spinner`, `Callout` for loading and errors
+    - Messages: `Card` components with dynamic styling
+
 - **Onboarding Flow:** `src/app/onboarding/page.tsx` - First-time user setup
   - Currency selection with `Select.Root` component
   - Flags and currency names from `CURRENCY_INFO`
   - Creates user profile via `/api/onboarding`
   - Redirects to chat after completion
+
 - **Authentication UI:**
   - `src/app/auth/signin/page.tsx` - OAuth sign-in with Radix `Card`, `Button`, `Callout`
   - `src/app/auth/callback/route.ts` - OAuth callback handler
   - `src/components/AuthButton.tsx` - `DropdownMenu` with `Avatar`, keyboard accessible
-- **Components:**
+
+- **Accessibility & UX:**
   - All components built with Radix UI primitives
   - Keyboard navigation support (Tab, Enter, Escape, Arrows)
   - ARIA labels and roles for screen readers
   - Focus management with visible indicators
-- **Markdown Rendering:** Uses `react-markdown` with `remark-gfm` for formatting AI responses
-- **Streaming:** Real-time response streaming using Vercel AI SDK's `useChat` hook
-- **Transport:** Custom `DefaultChatTransport` for API communication
-- **Protected Routes:** Proxy ensures unauthenticated users are redirected to sign-in page
-- **Onboarding Gate:** Authenticated users without profile are redirected to `/onboarding`
+  - Responsive design with Radix breakpoints
+  - Cohesive dark mode theme
 
-The UI features accessible components with built-in keyboard navigation, responsive design with Radix breakpoints, and a cohesive dark mode theme.
+- **Data Flow:**
+  - **Streaming:** Real-time response streaming using Vercel AI SDK's `useChat` hook
+  - **Transport:** Custom `DefaultChatTransport` for API communication
+  - **Protected Routes:** Proxy ensures unauthenticated users are redirected to sign-in page
+  - **Onboarding Gate:** Authenticated users without profile are redirected to `/onboarding`
+
+**Architecture Benefits:**
+- ✅ **Improved Maintainability:** ~78% reduction in page.tsx code (450+ → 100 lines)
+- ✅ **Separation of Concerns:** Logic (hooks), presentation (components), types separate
+- ✅ **Reusability:** Modular components can be reused across the app
+- ✅ **Testability:** Isolated components and hooks easier to unit test
+- ✅ **Type Safety:** Centralized type definitions prevent inconsistencies
+- ✅ **Developer Experience:** Clearer code structure, easier onboarding for new developers
 
 ### Type System
 
@@ -212,6 +251,13 @@ Types are centralized and shared between client and server:
   - `OcrResult` - Complete OCR processing result with clarification flags
   - `isDescriptionUnclear()` - Validation function for description quality assessment
   - `GuardarGastoInput`, `ModificarGastoInput` - Now include optional `divisa` field
+- `src/app/chat/types/chat.types.ts` - Chat-specific types for UI and messaging
+  - `Message` - Complete message structure with id, role, and parts
+  - `MessagePart` - Union type for text or file parts
+  - `MessageRole` - User or assistant role
+  - `ChatStatus` - Chat state: ready | submitted | streaming
+  - `SendMessageParams` - Parameters for sending messages
+  - `QuickAction` - Configuration for welcome screen actions
 - Constants defined for actions (GASTO_ACCIONES, CATEGORIA_ACCIONES) ensure type safety
 
 ### AI Model Configuration
@@ -304,6 +350,79 @@ User preferences and onboarding state management:
 - Provides default currency for expense creation
 
 ## Recent Updates
+
+### Chat Interface Refactoring: Modular Architecture (2025-11-07)
+Major refactoring of the chat interface to improve code maintainability, reusability, and developer experience through modular architecture.
+
+**Architecture Improvements:**
+
+1. **Code Organization:**
+   - **Before:** Monolithic `src/app/chat/page.tsx` with ~450 lines of mixed concerns
+   - **After:** Modular structure with ~100-line orchestrator and specialized modules
+   - **Reduction:** ~78% reduction in main page component complexity
+
+2. **New Directory Structure:**
+   - `src/app/chat/components/` - 12 specialized React components
+     - `ChatHeader.tsx` - Navigation header
+     - `WelcomeScreen.tsx` - Initial state with quick actions
+     - `ChatMessageList.tsx` - Message container with auto-scroll
+     - `ChatMessage.tsx` - Individual message renderer
+     - `MessageText.tsx` - Markdown rendering wrapper
+     - `MessageImage.tsx` - Image attachment display
+     - `ChatLoadingState.tsx` - Loading spinner
+     - `ChatErrorDisplay.tsx` - Error message display
+     - `ImagePreview.tsx` - Image preview before sending
+     - `ChatInputArea.tsx` - Text input with file buttons
+     - `ChatSubmitButton.tsx` - Send button with states
+     - `HiddenFileInputs.tsx` - File input refs
+   - `src/app/chat/hooks/` - 2 custom React hooks
+     - `useChatMessages.ts` - Type-safe wrapper for AI SDK's `useChat`
+     - `useFileUpload.ts` - File upload state and ref management
+   - `src/app/chat/types/` - Centralized type definitions
+     - `chat.types.ts` - Message, ChatStatus, SendMessageParams, QuickAction
+   - `src/app/chat/utils/` - Message processing utilities
+     - `messageUtils.ts` - Helper functions
+
+3. **Custom Hooks Implementation:**
+   - **useChatMessages:** Wraps Vercel AI SDK's `useChat` with type-safe interfaces
+     - Manages messages, status, error states
+     - Provides clean `sendMessage` abstraction
+     - Auto-generates default prompt for image-only messages
+   - **useFileUpload:** Handles file upload state management
+     - Manages file state and refs (camera/gallery)
+     - Provides cleanup and change handlers
+     - Encapsulates file input logic
+
+4. **Type Safety Enhancements:**
+   - `Message` - Complete message structure
+   - `MessagePart` - Union type for text/file parts
+   - `ChatStatus` - "ready" | "submitted" | "streaming"
+   - `SendMessageParams` - Type-safe message submission
+   - `QuickAction` - Welcome screen action config
+
+5. **AI System Prompt Improvements:**
+   - Added **IMPORTANTE - USO DE HERRAMIENTAS** section
+   - Instructions for immediate tool execution (no pre-confirmation text)
+   - Better response flow: execute tool → show results (not: confirm → execute → show)
+
+6. **New Dependencies:**
+   - `server-only@0.0.1` - Ensures server-only code protection
+
+**Benefits:**
+- ✅ **Maintainability:** Smaller, focused components easier to understand and modify
+- ✅ **Reusability:** Components and hooks can be reused across the app
+- ✅ **Testability:** Isolated units easier to test individually
+- ✅ **Type Safety:** Centralized types prevent inconsistencies
+- ✅ **Developer Experience:** Clear structure, easier onboarding
+- ✅ **Separation of Concerns:** Logic, presentation, types properly separated
+
+**Validation:**
+- ✅ All functionality preserved (no breaking changes)
+- ✅ Build successful with TypeScript strict mode
+- ✅ Chat streaming, file uploads, OCR processing working correctly
+- ✅ Radix UI components rendering properly
+
+---
 
 ### Multi-Currency Support & User Onboarding (2025-11-07)
 Implemented comprehensive multi-currency system with USD and ARS support, plus first-time user onboarding flow.
