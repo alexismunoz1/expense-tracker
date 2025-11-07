@@ -7,6 +7,28 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import AuthButton from "@/components/AuthButton";
+import {
+  Flex,
+  Box,
+  Heading,
+  Text,
+  Button,
+  IconButton,
+  TextField,
+  Card,
+  Callout,
+  Spinner,
+} from "@radix-ui/themes";
+import {
+  PaperPlaneIcon,
+  StopIcon,
+  CameraIcon,
+  ImageIcon,
+  QuestionMarkCircledIcon,
+  PlusIcon,
+  BarChartIcon,
+  Cross2Icon,
+} from "@radix-ui/react-icons";
 import styles from "./chat.module.css";
 
 export default function Page() {
@@ -20,187 +42,245 @@ export default function Page() {
     }),
   });
 
-  console.log("status", status);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() || (files && files.length > 0)) {
+      sendMessage({
+        text: input || "Analiza esta imagen y crea un gasto automáticamente",
+        files,
+      });
+      setInput("");
+      setFiles(undefined);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = "";
+      }
+    }
+  };
+
+  const clearFiles = () => {
+    setFiles(undefined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+  };
 
   return (
-    <div className={styles.chatContainer}>
-      <header className={styles.chatHeader}>
-        <div>
-          <h1>💰 Expense Tracker</h1>
-          <p>Gestiona tus gastos de forma inteligente</p>
-        </div>
-        <AuthButton />
-      </header>
+    <Flex direction="column" style={{ height: "100vh", maxWidth: "800px", margin: "0 auto" }}>
+      {/* Header */}
+      <Box
+        p="4"
+        style={{
+          background: "var(--accent-9)",
+          borderBottom: "1px solid var(--gray-6)",
+        }}
+      >
+        <Flex justify="between" align="center">
+          <Flex direction="column" gap="1">
+            <Heading size="6">💰 Expense Tracker</Heading>
+            <Text size="2" style={{ opacity: 0.9 }}>
+              Gestiona tus gastos de forma inteligente
+            </Text>
+          </Flex>
+          <AuthButton />
+        </Flex>
+      </Box>
 
-      <div className={styles.messagesContainer}>
+      {/* Messages Area */}
+      <Box
+        flexGrow="1"
+        p="4"
+        style={{
+          overflowY: "auto",
+          background: "var(--gray-3)",
+        }}
+      >
         {messages.length === 0 && (
-          <div className={styles.welcomeContainer}>
-            <div className={styles.welcomeMessage}>
-              <h2>¡Bienvenido a tu asistente de gastos! 👋</h2>
-              <p>
+          <Flex direction="column" align="center" justify="center" gap="6" style={{ minHeight: "300px" }}>
+            <Flex direction="column" align="center" gap="2">
+              <Heading size="7">¡Bienvenido a tu asistente de gastos! 👋</Heading>
+              <Text color="gray" size="3" align="center">
                 Estoy aquí para ayudarte a gestionar tus finanzas de manera inteligente.
-              </p>
-            </div>
-            <button
-              className={styles.helpButton}
-              onClick={() => sendMessage({ text: "¿En qué puedes ayudarme?" })}>
-              <span className={styles.helpIcon}>💡</span>
+              </Text>
+            </Flex>
+
+            <Button
+              size="3"
+              variant="soft"
+              onClick={() => sendMessage({ text: "¿En qué puedes ayudarme?" })}
+            >
+              <QuestionMarkCircledIcon />
               ¿En qué puedo ayudarte?
-            </button>
-            <div className={styles.quickActions}>
-              <button
-                className={styles.quickActionButton}
-                onClick={() => sendMessage({ text: "Deseo agregar un gasto nuevo" })}>
-                <span>➕</span> Agregar gasto
-              </button>
-              <button
-                className={styles.quickActionButton}
-                onClick={() => sendMessage({ text: "Mostrar todos mis gastos" })}>
-                <span>📊</span> Ver mis gastos
-              </button>
-              <button
-                className={styles.quickActionButton}
-                onClick={() => cameraInputRef.current?.click()}>
-                <span>📸</span> Tomar foto
-              </button>
-              <button
-                className={styles.quickActionButton}
-                onClick={() => fileInputRef.current?.click()}>
-                <span>🖼️</span> Galería
-              </button>
-            </div>
-          </div>
+            </Button>
+
+            <Flex gap="3" wrap="wrap" justify="center" style={{ maxWidth: "600px" }}>
+              <Button
+                variant="surface"
+                onClick={() => sendMessage({ text: "Deseo agregar un gasto nuevo" })}
+              >
+                <PlusIcon />
+                Agregar gasto
+              </Button>
+              <Button
+                variant="surface"
+                onClick={() => sendMessage({ text: "Mostrar todos mis gastos" })}
+              >
+                <BarChartIcon />
+                Ver mis gastos
+              </Button>
+              <Button variant="surface" onClick={() => cameraInputRef.current?.click()}>
+                <CameraIcon />
+                Tomar foto
+              </Button>
+              <Button variant="surface" onClick={() => fileInputRef.current?.click()}>
+                <ImageIcon />
+                Galería
+              </Button>
+            </Flex>
+          </Flex>
         )}
+
         {messages.map((message) => (
-          <div
+          <Card
             key={message.id}
-            className={
-              message.role === "user" ? styles.messageUser : styles.messageAssistant
-            }>
-            <strong>{message.role === "user" ? "Tú: " : "Asistente: "}</strong>
-            <div>
+            mb="3"
+            style={{
+              maxWidth: "85%",
+              marginLeft: message.role === "user" ? "auto" : "0",
+              marginRight: message.role === "user" ? "0" : "auto",
+              background: message.role === "user" ? "var(--indigo-9)" : "var(--gray-4)",
+            }}
+          >
+            <Flex direction="column" gap="2">
+              <Text weight="bold" size="2">
+                {message.role === "user" ? "Tú" : "Asistente"}
+              </Text>
               {message.parts.map((part, index) => {
                 if (part.type === "text") {
                   return (
-                    <div key={index} className={styles.messageText}>
+                    <Box key={index} className={styles.messageText}>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           table: ({ children }) => (
-                            <div className='table-container'>
+                            <div className="table-container">
                               <table>{children}</table>
                             </div>
                           ),
-                        }}>
+                        }}
+                      >
                         {part.text}
                       </ReactMarkdown>
-                    </div>
+                    </Box>
                   );
                 }
 
                 if (part.type === "file" && part.mediaType?.startsWith("image/")) {
                   return (
-                    <div key={index} className={styles.imageContainer}>
+                    <Box key={index}>
                       <Image
                         src={part.url}
                         alt={part.filename || "Imagen adjunta"}
                         width={400}
                         height={300}
-                        className={styles.messageImage}
+                        style={{ borderRadius: "var(--radius-3)", maxWidth: "100%" }}
                         unoptimized
                       />
-                    </div>
+                    </Box>
                   );
                 }
 
                 return null;
               })}
-            </div>
-          </div>
+            </Flex>
+          </Card>
         ))}
-      </div>
+      </Box>
 
+      {/* Error Display */}
       {error && (
-        <div className={styles.errorContainer}>
-          <div>❌ Ocurrió un error: {error.message}</div>
-        </div>
+        <Box p="4">
+          <Callout.Root color="red">
+            <Callout.Text>❌ Ocurrió un error: {error.message}</Callout.Text>
+          </Callout.Root>
+        </Box>
       )}
 
+      {/* Loading State */}
       {(status === "submitted" || status === "streaming") && (
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingSpinner}></div>
-          <p>Procesando...</p>
-        </div>
+        <Box p="4">
+          <Flex align="center" gap="2">
+            <Spinner />
+            <Text>Procesando...</Text>
+          </Flex>
+        </Box>
       )}
 
+      {/* Image Preview */}
       {files && files.length > 0 && (
-        <div className={styles.imagePreviewContainer}>
-          <div className={styles.imagePreviewHeader}>
-            <span>📎 Imágenes adjuntas ({files.length})</span>
-            <button
-              type='button'
-              onClick={() => {
-                setFiles(undefined);
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = "";
-                }
-                if (cameraInputRef.current) {
-                  cameraInputRef.current.value = "";
-                }
-              }}
-              className={styles.clearFilesButton}>
-              ✕
-            </button>
-          </div>
-          <div className={styles.imagePreviewGrid}>
-            {Array.from(files).map((file, index) => (
-              <div key={index} className={styles.imagePreviewItem}>
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  className={styles.imagePreview}
-                />
-                <span className={styles.imagePreviewName}>{file.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Box
+          p="4"
+          style={{
+            background: "var(--gray-2)",
+            borderTop: "1px solid var(--gray-6)",
+          }}
+        >
+          <Flex direction="column" gap="3">
+            <Flex justify="between" align="center">
+              <Text size="2" weight="medium">
+                📎 Imágenes adjuntas ({files.length})
+              </Text>
+              <IconButton size="1" variant="ghost" onClick={clearFiles}>
+                <Cross2Icon />
+              </IconButton>
+            </Flex>
+            <Flex gap="2" wrap="wrap">
+              {Array.from(files).map((file, index) => (
+                <Card key={index} style={{ padding: "8px" }}>
+                  <Flex direction="column" gap="2" align="center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        objectFit: "cover",
+                        borderRadius: "var(--radius-2)",
+                      }}
+                    />
+                    <Text size="1" style={{ maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {file.name}
+                    </Text>
+                  </Flex>
+                </Card>
+              ))}
+            </Flex>
+          </Flex>
+        </Box>
       )}
 
-      <footer className={styles.chatFooter}>
-        <form
-          className={styles.form}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (input.trim() || (files && files.length > 0)) {
-              sendMessage({ 
-                text: input || "Analiza esta imagen y crea un gasto automáticamente",
-                files 
-              });
-              setInput("");
-              setFiles(undefined);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-              }
-              if (cameraInputRef.current) {
-                cameraInputRef.current.value = "";
-              }
-            }
-          }}>
-          <div className={styles.inputContainer}>
-            <input
-              className={styles.input}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={status !== "ready"}
-              placeholder='Pregunta sobre tus gastos o registra uno nuevo...'
-            />
-
+      {/* Input Area */}
+      <Box
+        p="4"
+        style={{
+          background: "var(--gray-2)",
+          borderTop: "1px solid var(--gray-6)",
+        }}
+      >
+        <form onSubmit={handleSubmit}>
+          <Flex gap="2" align="center">
+            {/* Hidden file inputs */}
             <input
               ref={cameraInputRef}
-              type='file'
-              accept='image/*'
-              capture='environment'
+              type="file"
+              accept="image/*"
+              capture="environment"
               style={{ display: "none" }}
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
@@ -208,11 +288,10 @@ export default function Page() {
                 }
               }}
             />
-
             <input
               ref={fileInputRef}
-              type='file'
-              accept='image/*'
+              type="file"
+              accept="image/*"
               multiple
               style={{ display: "none" }}
               onChange={(e) => {
@@ -222,44 +301,59 @@ export default function Page() {
               }}
             />
 
-            <button
-              type='button'
-              className={styles.fileButton}
-              title='Tomar foto'
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={status !== "ready"}>
-              📸
-            </button>
+            {/* Input field */}
+            <TextField.Root
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Pregunta sobre tus gastos o registra uno nuevo..."
+              disabled={status !== "ready"}
+              size="3"
+              style={{ flex: 1 }}
+            />
 
-            <button
-              type='button'
-              className={styles.fileButton}
-              title='Seleccionar de galería'
+            {/* Camera button */}
+            <IconButton
+              type="button"
+              variant="surface"
+              size="3"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={status !== "ready"}
+              title="Tomar foto"
+            >
+              <CameraIcon />
+            </IconButton>
+
+            {/* Gallery button */}
+            <IconButton
+              type="button"
+              variant="surface"
+              size="3"
               onClick={() => fileInputRef.current?.click()}
-              disabled={status !== "ready"}>
-              🖼️
-            </button>
+              disabled={status !== "ready"}
+              title="Seleccionar de galería"
+            >
+              <ImageIcon />
+            </IconButton>
+
+            {/* Submit/Stop button */}
             {status === "submitted" || status === "streaming" ? (
-              <button type='button' onClick={() => stop()} className={styles.stopButton}>
-                <span className={styles.buttonText}>Detener</span>
-                <span className={styles.buttonIcon}>⏹️</span>
-              </button>
+              <Button type="button" color="red" size="3" onClick={() => stop()}>
+                <StopIcon />
+                Detener
+              </Button>
             ) : (
-              <button
-                type='submit'
-                disabled={
-                  status !== "ready" ||
-                  !!error ||
-                  (input.length === 0 && (!files || files.length === 0))
-                }
-                className={styles.submitButton}>
-                <span className={styles.buttonText}>Enviar</span>
-                <span className={styles.buttonIcon}>📤</span>
-              </button>
+              <Button
+                type="submit"
+                size="3"
+                disabled={status !== "ready" || !!error || (input.length === 0 && (!files || files.length === 0))}
+              >
+                <PaperPlaneIcon />
+                Enviar
+              </Button>
             )}
-          </div>
+          </Flex>
         </form>
-      </footer>
-    </div>
+      </Box>
+    </Flex>
   );
 }

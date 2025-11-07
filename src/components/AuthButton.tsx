@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
+import { DropdownMenu, Avatar, Flex, Text, Skeleton } from "@radix-ui/themes";
+import { ExitIcon } from "@radix-ui/react-icons";
 
 export default function AuthButton() {
   const router = useRouter();
@@ -37,7 +39,9 @@ export default function AuthButton() {
 
   if (isLoading) {
     return (
-      <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+      <Skeleton>
+        <Avatar size="3" radius="full" fallback="" />
+      </Skeleton>
     );
   }
 
@@ -45,38 +49,49 @@ export default function AuthButton() {
     return null;
   }
 
+  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuario";
+  const initials = displayName[0]?.toUpperCase() || "U";
+
   return (
-    <div className="flex items-center gap-3">
-      <div className="hidden sm:block text-right">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">
-          {user.user_metadata?.full_name || user.email?.split("@")[0]}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-      </div>
-
-      <div className="relative group">
-        {user.user_metadata?.avatar_url ? (
-          <img
-            src={user.user_metadata.avatar_url}
-            alt="Avatar"
-            className="h-9 w-9 rounded-full border-2 border-gray-200 dark:border-gray-700 cursor-pointer"
-          />
-        ) : (
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm cursor-pointer">
-            {(user.email?.[0] || "U").toUpperCase()}
-          </div>
-        )}
-
-        {/* Dropdown menu */}
-        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700">
-          <button
-            onClick={handleSignOut}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger>
+        <Flex align="center" gap="3" style={{ cursor: "pointer" }}>
+          <Flex
+            direction="column"
+            align="end"
+            gap="1"
+            display={{ initial: "none", sm: "flex" }}
           >
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
-    </div>
+            <Text size="2" weight="medium">
+              {displayName}
+            </Text>
+            <Text size="1" color="gray">
+              {user.email}
+            </Text>
+          </Flex>
+
+          <Avatar
+            size="3"
+            radius="full"
+            src={user.user_metadata?.avatar_url}
+            fallback={initials}
+            color="indigo"
+          />
+        </Flex>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Content size="2" sideOffset={8}>
+        <DropdownMenu.Item
+          color="red"
+          onClick={handleSignOut}
+          style={{ cursor: "pointer" }}
+        >
+          <Flex align="center" gap="2">
+            <ExitIcon />
+            <Text>Cerrar sesión</Text>
+          </Flex>
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 }
