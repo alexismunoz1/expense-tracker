@@ -24,6 +24,37 @@ When creating git commits, DO NOT include the following signatures or attributio
 
 Keep commit messages clean, professional, and focused on describing the changes without AI attribution.
 
+## Coding Standards
+
+### File Naming Convention
+
+All files in this project MUST follow kebab-case naming convention:
+
+**✅ Correct:**
+- `user-profile.ts`
+- `chat-message.tsx`
+- `use-file-upload.ts`
+- `expense-utils.ts`
+- `chat.module.css`
+
+**❌ Incorrect:**
+- `UserProfile.ts` (PascalCase)
+- `chatMessage.tsx` (camelCase)
+- `useFileUpload.ts` (camelCase)
+- `ExpenseUtils.ts` (PascalCase)
+
+**Format:** `nombre-archivo-ejemplo.extension`
+
+**Applies to:**
+- React components (.tsx, .jsx)
+- Hooks (.ts, .tsx)
+- Utilities (.ts)
+- Styles (.css, .module.css)
+- Type definitions (.ts)
+- All other source files
+
+**Note:** This convention applies to all new files created from this point forward. Existing files may gradually be migrated to this standard.
+
 ## Technical Stack
 
 ### Core Framework
