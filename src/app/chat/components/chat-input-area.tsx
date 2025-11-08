@@ -1,8 +1,8 @@
-import { memo } from "react";
-import { Box, Flex, TextField, IconButton } from "@radix-ui/themes";
-import { ImageIcon } from "@radix-ui/react-icons";
+import { memo, useRef, useEffect } from "react";
+import { Box, Flex, TextArea, Text } from "@radix-ui/themes";
 import { HiddenFileInputs } from "./hidden-file-inputs";
 import { ChatSubmitButton } from "./chat-submit-button";
+import { FileUploadDialog } from "./file-upload-dialog";
 import type { ChatStatus } from "../types";
 
 const CONTAINER_STYLE = {
@@ -10,7 +10,15 @@ const CONTAINER_STYLE = {
   borderTop: "1px solid var(--gray-6)",
 } as const;
 
-const INPUT_STYLE = { flex: 1 } as const;
+const INPUT_STYLE = { flex: 1, width: "100%" } as const;
+
+const TEXTAREA_STYLE = {
+  width: "100%",
+  minHeight: "40px",
+  maxHeight: "200px",
+  overflow: "hidden",
+  resize: "none",
+} as const;
 
 interface ChatInputAreaProps {
   input: string;
@@ -20,10 +28,12 @@ interface ChatInputAreaProps {
   cameraInputRef: React.RefObject<HTMLInputElement | null>;
   onFilesChange: (files: FileList | null) => void;
   onGalleryClick: () => void;
+  onCameraClick: () => void;
   status: ChatStatus;
   error: Error | null;
   hasContent: boolean;
   onStop: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -39,47 +49,67 @@ export const ChatInputArea = memo(function ChatInputArea({
   cameraInputRef,
   onFilesChange,
   onGalleryClick,
+  onCameraClick,
   status,
   error,
   hasContent,
   onStop,
+  onKeyDown,
 }: ChatInputAreaProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [input]);
+
   return (
-    <Box p="4" style={CONTAINER_STYLE}>
+    <Box p="3" style={CONTAINER_STYLE}>
       <form onSubmit={onSubmit}>
-        <Flex gap="2" align="center">
-          <HiddenFileInputs
-            fileInputRef={fileInputRef}
-            cameraInputRef={cameraInputRef}
-            onFilesChange={onFilesChange}
-          />
+        <Flex direction="column" gap="2">
 
-          <TextField.Root
-            value={input}
-            onChange={(e) => onInputChange(e.target.value)}
-            placeholder="Pregunta sobre tus gastos o registra uno nuevo..."
-            disabled={status !== "ready"}
-            size="3"
-            style={INPUT_STYLE}
-          />
+          <Flex gap="2" align="center">
 
-          <IconButton
-            type="button"
-            variant="surface"
-            size="3"
-            onClick={onGalleryClick}
-            disabled={status !== "ready"}
-            title="Seleccionar de galería"
-          >
-            <ImageIcon />
-          </IconButton>
+            <Box style={INPUT_STYLE}>
+              <TextArea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="Pregunta sobre tus gastos o registra uno nuevo..."
+                disabled={status !== "ready"}
+                size="2"
+                resize="vertical"
+                aria-label="Campo de mensaje"
+                aria-describedby="keyboard-hint"
+                style={TEXTAREA_STYLE}
+              />
+            </Box>
+          </Flex>
 
-          <ChatSubmitButton
-            status={status}
-            error={error}
-            hasContent={hasContent}
-            onStop={onStop}
-          />
+          <Flex justify="between" align="center">
+            <HiddenFileInputs
+              fileInputRef={fileInputRef}
+              cameraInputRef={cameraInputRef}
+              onFilesChange={onFilesChange}
+            />
+
+            <FileUploadDialog
+              onGalleryClick={onGalleryClick}
+              onCameraClick={onCameraClick}
+              disabled={status !== "ready"}
+            />
+            <ChatSubmitButton
+              status={status}
+              error={error}
+              hasContent={hasContent}
+              onStop={onStop}
+            />
+          </Flex>
         </Flex>
       </form>
     </Box>

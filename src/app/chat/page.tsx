@@ -63,6 +63,22 @@ export default function Page() {
     fileInputRef.current?.click();
   }, [fileInputRef]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Submit on Enter (without Shift)
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (input.trim() || (files && files.length > 0)) {
+          sendMessage({ text: input, files });
+          setInput("");
+          clearFiles();
+        }
+      }
+      // Allow Shift+Enter for new line (default textarea behavior)
+    },
+    [input, files, sendMessage, clearFiles]
+  );
+
   const hasContent =
     input.trim().length > 0 || (files !== undefined && files.length > 0);
 
@@ -96,6 +112,8 @@ export default function Page() {
         cameraInputRef={cameraInputRef}
         onFilesChange={handleFileChange}
         onGalleryClick={handleGalleryClick}
+        onCameraClick={handleCameraClick}
+        onKeyDown={handleKeyDown}
         status={status}
         error={error}
         hasContent={hasContent}

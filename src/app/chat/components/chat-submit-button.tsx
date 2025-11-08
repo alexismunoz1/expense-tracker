@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Button } from "@radix-ui/themes";
-import { ArrowUpIcon, StopIcon } from "@radix-ui/react-icons";
+import { ArrowUpIcon, SquareIcon } from "@radix-ui/react-icons";
 import type { ChatStatus } from "../types";
 
 const BUTTON_STYLE = { padding: "0.75rem" } as const;
@@ -28,11 +28,13 @@ export const ChatSubmitButton = memo(function ChatSubmitButton({
       <Button
         type="button"
         color="red"
-        size="3"
+        size="2"
         style={BUTTON_STYLE}
         onClick={onStop}
+        aria-label="Detener generación"
+        title="Detener generación"
       >
-        <StopIcon />
+        <SquareIcon/>
       </Button>
     );
   }
@@ -41,9 +43,11 @@ export const ChatSubmitButton = memo(function ChatSubmitButton({
   return (
     <Button
       type="submit"
-      size="3"
+      size="2"
       style={BUTTON_STYLE}
       disabled={status !== "ready" || !!error || !hasContent}
+      aria-label="Enviar mensaje"
+      title="Enviar mensaje (Enter)"
     >
       <ArrowUpIcon />
     </Button>

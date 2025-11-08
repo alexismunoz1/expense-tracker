@@ -40,7 +40,7 @@ export default function AuthButton() {
   if (isLoading) {
     return (
       <Skeleton>
-        <Avatar size="3" radius="full" fallback="" />
+        <Avatar size="1" radius="full" fallback="" />
       </Skeleton>
     );
   }
