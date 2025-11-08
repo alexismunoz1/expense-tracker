@@ -91,17 +91,18 @@
   .messageAssistant {
     margin-bottom: 0.75rem;
     padding: 0.75rem;
-    max-width: 90%;
   }
 
   .messageUser {
     margin-left: auto;
     margin-right: 0;
+    max-width: 90%;
   }
 
   .messageAssistant {
     margin-left: 0;
     margin-right: auto;
+    width: 100%;
   }
 }
 
@@ -139,8 +140,15 @@
 
   .messageUser,
   .messageAssistant {
-    max-width: 95%;
     padding: 0.5rem 0.75rem;
+  }
+
+  .messageUser {
+    max-width: 95%;
+  }
+
+  .messageAssistant {
+    width: 100%;
   }
 }
 
@@ -326,7 +334,7 @@
   border: 1px solid var(--border-assistant-message);
   color: var(--text-primary);
   box-shadow: 0 2px 8px var(--shadow-light);
-  max-width: 85%;
+  width: 100%;
   margin-left: 0;
   margin-right: auto;
   position: relative;
@@ -335,6 +343,7 @@
 .messageText {
   color: inherit;
   line-height: 1.6;
+  width: 100%;
 }
 
 .messageText h1,
@@ -349,13 +358,11 @@
 }
 
 .messageText p {
-  margin: 0.5em 0;
   color: inherit;
 }
 
 .messageText ul,
 .messageText ol {
-  margin: 0.5em 0;
   padding-left: 1.5em;
 }
 
@@ -402,117 +409,12 @@
 
 .messageText blockquote {
   border-left: 4px solid var(--border-tertiary);
-  margin: 0.5em 0;
   padding-left: 1em;
   color: var(--text-quinary);
   font-style: italic;
 }
 
-.messageText table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 1em 0;
-  box-shadow: 0 4px 12px var(--shadow-medium);
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--border-primary);
-}
-
-.messageText th,
-.messageText td {
-  border: none;
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.messageText th {
-  background: var(--gradient-table-header);
-  color: var(--text-tertiary);
-  font-weight: 600;
-  font-size: 0.9em;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.messageText td {
-  background-color: var(--bg-quaternary);
-  transition: background-color 0.2s ease;
-  color: var(--text-primary);
-}
-
-.messageText tr:hover td {
-  background-color: var(--border-secondary);
-}
-
-.messageText tr:nth-child(even) td {
-  background-color: var(--bg-quinary);
-}
-
-.messageText tr:nth-child(even):hover td {
-  background-color: var(--border-secondary);
-}
-
-.messageText td:first-child {
-  font-weight: 500;
-  color: var(--text-tertiary);
-}
-
-.messageText td:nth-child(2) {
-  font-weight: 600;
-  color: var(--color-success);
-  font-family: "Courier New", monospace;
-}
-
-.messageText td:nth-child(3) {
-  color: var(--text-quinary);
-  font-size: 0.9em;
-}
-
-/* Contenedor responsivo para tablas */
-.responsiveTable {
-  margin: 1em 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Tabla con scroll horizontal en móvil */
-.desktopTable {
-  display: block;
-  width: 100%;
-}
-
-/* En móvil: forzar ancho mínimo para scroll horizontal */
-@media (max-width: 768px) {
-  .desktopTable {
-    min-width: 600px;
-  }
-}
-
-.messageText .table-container {
-  overflow-x: auto;
-  margin: 1em 0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--shadow-medium);
-}
-
-.messageText .table-container::-webkit-scrollbar {
-  height: 8px;
-}
-
-.messageText .table-container::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 4px;
-}
-
-.messageText .table-container::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
-  border-radius: 4px;
-}
-
-.messageText .table-container::-webkit-scrollbar-thumb:hover {
-  background: var(--border-secondary);
-}
+/* Table styles removed - expense lists now use Radix UI Card components */
 
 .toolInfo {
   color: var(--text-quinary);
@@ -819,89 +721,12 @@
     font-size: 1rem;
   }
 
-  /* Tablas responsivas en móvil */
-  .messageText table {
-    font-size: 0.85rem;
-    min-width: 600px; /* Fuerza scroll horizontal si necesario */
-  }
-
-  .messageText th,
-  .messageText td {
-    padding: 8px 12px;
-    white-space: nowrap;
-  }
-
-  .messageText th {
-    font-size: 0.8rem;
-  }
-
-  .messageText td:first-child {
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .messageText td:nth-child(2) {
-    min-width: 80px;
-  }
-
-  .messageText td:nth-child(3) {
-    min-width: 100px;
-    font-size: 0.8rem;
-  }
-
-  .messageText td:nth-child(4) {
-    min-width: 90px;
-    font-size: 0.8rem;
-  }
+  /* Mobile table styles removed - expense lists now use Radix UI responsive Grid */
 }
 
-/* Estilos para pantallas muy pequeñas */
+/* Extra small screen styles removed - using Radix UI responsive components */
 @media (max-width: 375px) {
-  .messageText table {
-    font-size: 0.8rem;
-    min-width: 550px;
-  }
-
-  .messageText th,
-  .messageText td {
-    padding: 6px 8px;
-  }
-
-  .messageText th {
-    font-size: 0.75rem;
-  }
-
-  .messageText td:first-child {
-    max-width: 100px;
-  }
-
-  .messageText td:nth-child(2) {
-    min-width: 70px;
-    font-size: 0.8rem;
-  }
-
-  .messageText td:nth-child(3) {
-    min-width: 80px;
-    font-size: 0.75rem;
-  }
-
-  .messageText td:nth-child(4) {
-    min-width: 80px;
-    font-size: 0.75rem;
-  }
-
-  /* Indicador de scroll para tablas */
-  .messageText .table-container::after {
-    content: "← Desliza para ver más →";
-    display: block;
-    text-align: center;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    padding: 0.5rem;
-    font-style: italic;
-  }
+  /* Keeping this media query for potential future use */
 }
 
 /* Contenedor de carga/loading */

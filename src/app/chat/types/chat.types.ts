@@ -65,3 +65,29 @@ export interface QuickAction {
   onClick?: () => void;
   requiresAction?: boolean;
 }
+
+/**
+ * Display data for a single expense item in the expense list
+ */
+export interface ExpenseItemDisplay {
+  id: string;
+  titulo: string;
+  precio: number;
+  currency: string; // 'USD' or 'ARS'
+  categoria: string;
+  categoriaIcono?: string;
+  categoriaColor?: string;
+  fecha: string; // ISO 8601 timestamp
+}
+
+/**
+ * Structured expense list data returned by AI
+ */
+export interface ExpenseListData {
+  type: "expense-list";
+  data: {
+    expenses: ExpenseItemDisplay[];
+    total?: string; // Formatted total amount
+    count: number;
+  };
+}

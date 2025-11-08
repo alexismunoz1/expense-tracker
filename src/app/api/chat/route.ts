@@ -129,18 +129,52 @@ Categorías: alimentacion, transporte, entretenimiento, salud, educacion, servic
 - Divisas disponibles: USD (dólares estadounidenses), ARS (pesos argentinos)
 - Cuando uses la herramienta gestionarGasto, incluye el campo 'divisa' solo si el usuario especifica una divisa diferente a ${userCurrency}
 
-**FORMATO DE TABLAS DE GASTOS:**
-Cuando muestres gastos en tablas, usa este formato:
+**FORMATO DE LISTADO DE GASTOS:**
+Cuando muestres una lista de gastos (2 o más), usa SIEMPRE el formato JSON estructurado.
 
-| Descripción | Precio | Categoría | Fecha |
-|-------------|--------|-----------|-------|
-| Nombre del gasto | $XX.XX USD | 🏷️ Categoría | DD Mes YYYY |
+**IMPORTANTE - PREPARACIÓN DE DATOS:**
+Para crear el JSON con información completa:
+1. Llama a gestionarCategoria con accion: "obtener" para obtener todas las categorías
+2. Llama a gestionarGasto con accion: "obtener" (con filtros si aplica) para obtener gastos
+3. Combina los datos: para cada gasto, busca su categoría por el campo "categoria" (que es el ID)
+4. Incluye el icono y color de la categoría en el JSON
+
+Para listar gastos, envuelve el JSON entre marcadores especiales:
+:::expense-list-json
+{
+  "type": "expense-list",
+  "data": {
+    "expenses": [
+      {
+        "id": "abc123",
+        "titulo": "Supermercado",
+        "precio": 5000,
+        "currency": "ARS",
+        "categoria": "alimentacion",
+        "categoriaIcono": "🍔",
+        "categoriaColor": "orange",
+        "fecha": "2025-11-07T10:30:00.000Z"
+      }
+    ],
+    "total": "$73,010.00 ARS",
+    "count": 6
+  }
+}
+:::end
+
+**IMPORTANTE:**
+- SOLO usa este formato cuando listes 2 o más gastos
+- Para un solo gasto o crear/modificar, usa respuesta de texto normal
+- El campo "total" debe incluir el símbolo de moneda y el código (ej: "$5,000.00 ARS")
+- Las fechas en el JSON deben mantener el formato ISO 8601
+- Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON
+- Ejemplo: "He encontrado 6 gastos: [JSON aquí] ¿Necesitas filtrar por categoría?"
 
 **IMPORTANTE - FORMATO DE FECHAS:**
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
-- Debes convertirlas a formato legible en español: "6 nov 2025" o "6 de noviembre de 2025"
-- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE muestra la fecha real parseada
-- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic`;
+- En el JSON, mantén el formato ISO 8601
+- El componente visual se encargará de formatearlas en español
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real`;
 
         // Si se requiere clarificación, agregar instrucciones especiales
         if (processingResult.requiresClarification && processingResult.extractedData) {
@@ -238,18 +272,52 @@ Categorías: alimentacion, transporte, entretenimiento, salud, educacion, servic
   - "gasté 50 USD en Amazon" → usa USD (especificar divisa: 'USD' en tool)
   - "gasté 1000 pesos en el super" → usa ARS (especificar divisa: 'ARS' en tool)
 
-**FORMATO DE TABLAS DE GASTOS:**
-Cuando muestres gastos en tablas, usa este formato:
+**FORMATO DE LISTADO DE GASTOS:**
+Cuando muestres una lista de gastos (2 o más), usa SIEMPRE el formato JSON estructurado.
 
-| Descripción | Precio | Categoría | Fecha |
-|-------------|--------|-----------|-------|
-| Nombre del gasto | $XX.XX USD | 🏷️ Categoría | DD Mes YYYY |
+**IMPORTANTE - PREPARACIÓN DE DATOS:**
+Para crear el JSON con información completa:
+1. Llama a gestionarCategoria con accion: "obtener" para obtener todas las categorías
+2. Llama a gestionarGasto con accion: "obtener" (con filtros si aplica) para obtener gastos
+3. Combina los datos: para cada gasto, busca su categoría por el campo "categoria" (que es el ID)
+4. Incluye el icono y color de la categoría en el JSON
+
+Para listar gastos, envuelve el JSON entre marcadores especiales:
+:::expense-list-json
+{
+  "type": "expense-list",
+  "data": {
+    "expenses": [
+      {
+        "id": "abc123",
+        "titulo": "Supermercado",
+        "precio": 5000,
+        "currency": "ARS",
+        "categoria": "alimentacion",
+        "categoriaIcono": "🍔",
+        "categoriaColor": "orange",
+        "fecha": "2025-11-07T10:30:00.000Z"
+      }
+    ],
+    "total": "$73,010.00 ARS",
+    "count": 6
+  }
+}
+:::end
+
+**IMPORTANTE:**
+- SOLO usa este formato cuando listes 2 o más gastos
+- Para un solo gasto o crear/modificar, usa respuesta de texto normal
+- El campo "total" debe incluir el símbolo de moneda y el código (ej: "$5,000.00 ARS")
+- Las fechas en el JSON deben mantener el formato ISO 8601
+- Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON
+- Ejemplo: "He encontrado 6 gastos: [JSON aquí] ¿Necesitas filtrar por categoría?"
 
 **IMPORTANTE - FORMATO DE FECHAS:**
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
-- Debes convertirlas a formato legible en español: "6 nov 2025" o "6 de noviembre de 2025"
-- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE muestra la fecha real parseada
-- Usa nombres de meses en español: ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic`,
+- En el JSON, mantén el formato ISO 8601
+- El componente visual se encargará de formatearlas en español
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real`,
       messages: convertToModelMessages(messagesWithoutImages),
       tools: {
         gestionarGasto: tool({

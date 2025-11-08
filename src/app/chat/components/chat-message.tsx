@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Flex, Text, Card } from "@radix-ui/themes";
+import { Flex, Card } from "@radix-ui/themes";
 import { MessageText } from "./message-text";
 import { MessageImage } from "./message-image";
 import { getImageParts } from "../utils";
@@ -24,7 +24,7 @@ export const ChatMessage = memo(function ChatMessage({
       key={message.id}
       mb="3"
       style={{
-        maxWidth: "85%",
+        maxWidth: message.role === "user" ? "85%" : "100%",
         marginLeft: message.role === "user" ? "auto" : "0",
         marginRight: message.role === "user" ? "0" : "auto",
         background:
@@ -32,9 +32,6 @@ export const ChatMessage = memo(function ChatMessage({
       }}
     >
       <Flex direction="column" gap="2">
-        <Text weight="bold" size="2">
-          {message.role === "user" ? "Tú" : "Asistente"}
-        </Text>
         <MessageText message={message} />
         {imageParts.map((part, index) => (
           <MessageImage
