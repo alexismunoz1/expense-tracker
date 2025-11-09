@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { Card, Flex } from "@radix-ui/themes";
+import { Flex } from "@radix-ui/themes";
 import { ExpenseCardDetails } from "../expense-card-details";
 import { ExpenseCardHeader } from "../expense-card-header";
 import styles from "./expense-card.module.css";
@@ -23,7 +23,7 @@ export const ExpenseCard = memo(function ExpenseCard({
   }).format(expense.precio);
 
   return (
-    <Card asChild className={styles.card}>
+    <Flex className={styles.card}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={styles.button}
@@ -52,6 +52,6 @@ export const ExpenseCard = memo(function ExpenseCard({
           {isExpanded && <ExpenseCardDetails fecha={expense.fecha} />}
         </Flex>
       </button>
-    </Card>
+    </Flex>
   );
 });

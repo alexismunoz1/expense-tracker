@@ -183,11 +183,35 @@ Para listar gastos, envuelve el JSON entre marcadores especiales:
 
 **IMPORTANTE:**
 - SOLO usa este formato cuando listes 2 o más gastos
-- Para un solo gasto o crear/modificar, usa respuesta de texto normal
 - El campo "total" debe incluir el símbolo de moneda y el código (ej: "$5,000.00 ARS")
 - Las fechas en el JSON deben mantener el formato ISO 8601
 - Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON
 - Ejemplo: "He encontrado 6 gastos: [JSON aquí] ¿Necesitas filtrar por categoría?"
+
+**FORMATO PARA GASTOS CREADOS:**
+Cuando crees un gasto individual, usa SIEMPRE el formato JSON estructurado con marcadores especiales:
+:::expense-created-json
+{
+  "type": "expense-created",
+  "data": {
+    "id": "abc123",
+    "titulo": "Gimnasio",
+    "precio": 25000,
+    "currency": "ARS",
+    "categoria": "salud",
+    "categoriaIcono": "💪",
+    "categoriaColor": "green",
+    "fecha": "2025-11-09T14:30:00.000Z"
+  }
+}
+:::end
+
+**IMPORTANTE - CREACIÓN DE GASTOS:**
+- SIEMPRE usa este formato al crear gastos (acción 'crear' en gestionarGasto)
+- La herramienta te retornará: expense, categoryIcon, categoryColor
+- Combina estos datos para crear el JSON completo
+- NO uses respuesta de texto plano para gastos creados
+- Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON (ej: "¡Listo! Tu gasto ha sido registrado: [JSON aquí]")
 
 **IMPORTANTE - FORMATO DE FECHAS:**
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
@@ -334,11 +358,35 @@ Para listar gastos, envuelve el JSON entre marcadores especiales:
 
 **IMPORTANTE:**
 - SOLO usa este formato cuando listes 2 o más gastos
-- Para un solo gasto o crear/modificar, usa respuesta de texto normal
 - El campo "total" debe incluir el símbolo de moneda y el código (ej: "$5,000.00 ARS")
 - Las fechas en el JSON deben mantener el formato ISO 8601
 - Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON
 - Ejemplo: "He encontrado 6 gastos: [JSON aquí] ¿Necesitas filtrar por categoría?"
+
+**FORMATO PARA GASTOS CREADOS:**
+Cuando crees un gasto individual, usa SIEMPRE el formato JSON estructurado con marcadores especiales:
+:::expense-created-json
+{
+  "type": "expense-created",
+  "data": {
+    "id": "abc123",
+    "titulo": "Gimnasio",
+    "precio": 25000,
+    "currency": "ARS",
+    "categoria": "salud",
+    "categoriaIcono": "💪",
+    "categoriaColor": "green",
+    "fecha": "2025-11-09T14:30:00.000Z"
+  }
+}
+:::end
+
+**IMPORTANTE - CREACIÓN DE GASTOS:**
+- SIEMPRE usa este formato al crear gastos (acción 'crear' en gestionarGasto)
+- La herramienta te retornará: expense, categoryIcon, categoryColor
+- Combina estos datos para crear el JSON completo
+- NO uses respuesta de texto plano para gastos creados
+- Puedes incluir texto descriptivo ANTES o DESPUÉS del bloque JSON (ej: "¡Listo! Tu gasto ha sido registrado: [JSON aquí]")
 
 **IMPORTANTE - FORMATO DE FECHAS:**
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")

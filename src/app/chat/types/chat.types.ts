@@ -93,3 +93,11 @@ export interface ExpenseListData {
     count: number;
   };
 }
+
+/**
+ * Structured data for a single created expense
+ */
+export interface ExpenseCreatedData {
+  type: "expense-created";
+  data: ExpenseItemDisplay;
+}

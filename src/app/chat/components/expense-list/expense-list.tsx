@@ -14,8 +14,6 @@ export const ExpenseList = memo(function ExpenseList({
 }: ExpenseListProps) {
   const { expenses, total, count } = data;
 
-  console.log(data);
-
   if (!expenses || expenses.length === 0) {
     return <ExpenseListEmpty />;
   }
@@ -35,7 +33,7 @@ export const ExpenseList = memo(function ExpenseList({
       <ExpenseListHeader count={count} total={total} />
 
       {/* Responsive Grid of Expense Cards */}
-      <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="3" width="100%">
+      <Grid columns={{ xs: "2", sm: "2", lg: "3" }} gap="3" width="100%">
         {expenses.map((expense) => (
           <ExpenseCard key={expense.id} expense={expense} />
         ))}

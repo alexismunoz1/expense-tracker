@@ -163,6 +163,8 @@ export interface ModificarGastoInput {
 // Respuesta para crear un gasto
 export interface CrearGastoResponse extends BaseResponse {
   expense?: Expense;
+  categoryIcon?: string;
+  categoryColor?: string;
 }
 
 // Respuesta para obtener gastos

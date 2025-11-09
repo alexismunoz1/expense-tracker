@@ -220,11 +220,17 @@ export const executeGuardarGasto = async (
 
     await saveExpense(expense);
 
+    // Obtener información de la categoría para incluir icono y color
+    const categories = await getCategories();
+    const categoryData = categories.find((cat) => cat.id === categoria);
+
     const formattedAmount = formatCurrency(precio, currency);
     return {
       success: true,
       message: `Gasto "${titulo}" registrado exitosamente por ${formattedAmount} en la categoría ${categoria}`,
       expense,
+      categoryIcon: categoryData?.icono,
+      categoryColor: categoryData?.color,
     };
   } catch (error) {
     return {
