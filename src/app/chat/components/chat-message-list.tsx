@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from "react";
-import { Flex } from "@radix-ui/themes";
+import { Flex, Text, Spinner } from "@radix-ui/themes";
+import { CHAT_FEEDBACK } from "@/constants";
 import { ChatMessage } from "./chat-message";
 import type { Message, ChatStatus } from "../types";
 
@@ -29,6 +30,14 @@ export const ChatMessageList = memo(function ChatMessageList({
 
   const isStreaming = status === "streaming";
   const lastMessageIndex = messages.length - 1;
+  const lastMessage = messages[lastMessageIndex];
+
+  // Show feedback when submitted OR when streaming but assistant message has no content yet
+  const showGeneratingFeedback =
+    status === "submitted" ||
+    (status === "streaming" &&
+      lastMessage?.role === "assistant" &&
+      lastMessage?.parts?.length === 0);
 
   return (
     <Flex direction="column" gap="2">
@@ -39,6 +48,14 @@ export const ChatMessageList = memo(function ChatMessageList({
           isStreaming={isStreaming && index === lastMessageIndex}
         />
       ))}
+      {showGeneratingFeedback && (
+        <Flex align="center" gap="2" p="3">
+          <Spinner size="2" />
+          <Text size="2" color="gray">
+            {CHAT_FEEDBACK.GENERATING_RESPONSES}
+          </Text>
+        </Flex>
+      )}
       <div ref={bottomRef} />
     </Flex>
   );

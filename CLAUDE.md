@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-AI-powered expense tracker with Next.js 16, React 19, Vercel AI SDK. Conversational interface in Spanish for managing expenses via natural language.
+**Finny** - AI-powered expense tracker with Next.js 16, React 19, Vercel AI SDK. Conversational interface in Spanish for managing expenses via natural language.
 
 ## Commands
 

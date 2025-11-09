@@ -37,7 +37,10 @@ export const ChatMessage = memo(function ChatMessage({
   // 2. Message is from assistant
   // 3. Message doesn't already have an internal loading indicator
   const shouldShowLoadingIndicator =
-    isStreaming && message.role === "assistant" && !hasInternalLoading;
+    isStreaming &&
+    message.role === "assistant" &&
+    !hasInternalLoading &&
+    message.parts.length > 0;
 
   return (
     <div className={styles.messageContainer} data-role={message.role}>

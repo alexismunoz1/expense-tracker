@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Expense Tracker - Gestiona tus gastos con IA",
+  title: "Finny - Gestiona tus gastos con IA",
   description:
     "Aplicación inteligente para gestionar tus gastos y finanzas personales con ayuda de inteligencia artificial",
 };
