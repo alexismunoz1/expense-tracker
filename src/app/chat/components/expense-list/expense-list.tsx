@@ -21,7 +21,16 @@ export const ExpenseList = memo(function ExpenseList({
   }
 
   return (
-    <Flex direction="column" gap="4" my="4">
+    <Flex
+      direction="column"
+      gap="4"
+      my="4"
+      style={{
+        borderRadius: "var(--radius-3)",
+        backgroundColor: "var(--bg-secondary)",
+        paddingBottom: "var(--space-3)",
+      }}
+    >
       {/* Header with summary */}
       <ExpenseListHeader count={count} total={total} />
 

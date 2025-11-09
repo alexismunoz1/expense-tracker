@@ -4,6 +4,7 @@ import { AuthButton } from "@/components/auth-button";
 
 const HEADER_STYLE = {
   background: "transparent",
+  borderBottom: "1px solid var(--gray-6)",
 } as const;
 
 /**

@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from "react";
-import { Box } from "@radix-ui/themes";
+import { Flex } from "@radix-ui/themes";
 import { ChatMessage } from "./chat-message";
 import type { Message, ChatStatus } from "../types";
 
@@ -31,7 +31,7 @@ export const ChatMessageList = memo(function ChatMessageList({
   const lastMessageIndex = messages.length - 1;
 
   return (
-    <Box>
+    <Flex direction="column" gap="2">
       {messages.map((message, index) => (
         <ChatMessage
           key={message.id}
@@ -40,6 +40,6 @@ export const ChatMessageList = memo(function ChatMessageList({
         />
       ))}
       <div ref={bottomRef} />
-    </Box>
+    </Flex>
   );
 });

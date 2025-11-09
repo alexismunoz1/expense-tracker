@@ -12,10 +12,6 @@
   cursor: pointer;
 }
 
-.button:hover {
-  box-shadow: var(--shadow-4);
-}
-
 .button:focus-visible {
   outline: 2px solid var(--accent-8);
   outline-offset: 2px;

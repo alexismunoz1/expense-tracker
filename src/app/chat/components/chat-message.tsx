@@ -46,7 +46,7 @@ export const ChatMessage = memo(function ChatMessage({
           message.role === "user" ? styles.userMessage : styles.assistantMessage
         }
       >
-        <Flex direction="column" gap="2" className={styles.messageContent}>
+        <Flex className={styles.messageContent}>
           <MessageText message={message} />
           {imageParts.map((part, index) => (
             <MessageImage

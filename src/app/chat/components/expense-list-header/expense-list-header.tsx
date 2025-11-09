@@ -15,10 +15,11 @@ export const ExpenseListHeader = memo(function ExpenseListHeader({
       justify="between"
       align="start"
       gap="3"
-      p="3"
+      m="3"
+      mb="1"
+      pb="2"
       style={{
-        background: "var(--gray-3)",
-        borderRadius: "var(--radius-3)",
+        borderBottom: "1px solid var(--border-primary)",
       }}
     >
       <Flex direction="column" align="start" gap="4">
