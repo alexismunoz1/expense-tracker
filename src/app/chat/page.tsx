@@ -15,9 +15,10 @@ import { useFileUpload, useChatMessages } from "./hooks";
 import type { SendMessageParams } from "./types";
 
 const CONTAINER_STYLE = {
-  height: "100vh",
+  height: "100dvh",
   maxWidth: "800px",
   margin: "0 auto",
+  position: "relative" as const,
 } as const;
 
 const MESSAGES_AREA_STYLE = {

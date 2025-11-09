@@ -8,6 +8,9 @@ import type { ChatStatus } from "../types";
 const CONTAINER_STYLE = {
   background: "var(--gray-2)",
   borderTop: "1px solid var(--gray-6)",
+  position: "sticky" as const,
+  bottom: 0,
+  zIndex: 10,
 } as const;
 
 const INPUT_STYLE = { flex: 1, width: "100%" } as const;
