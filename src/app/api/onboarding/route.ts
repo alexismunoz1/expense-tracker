@@ -1,17 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createUserProfile } from "@/utils/user-profile";
-import { z } from "zod";
+import type { NextRequest } from "next/server";
 
 const onboardingSchema = z.object({
-  currency: z.enum(['USD', 'ARS']),
+  currency: z.enum(["USD", "ARS"]),
 });
 
 export async function POST(req: NextRequest) {
   try {
     // Check authentication
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(

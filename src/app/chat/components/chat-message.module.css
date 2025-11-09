@@ -1,0 +1,61 @@
+/* Chat Message Styles */
+
+.messageContainer {
+  margin-bottom: var(--space-3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* User message styles */
+.messageContainer[data-role="user"] {
+  max-width: min(85%, 600px);
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.userMessage {
+  background: var(--indigo-9);
+  border-radius: var(--radius-4);
+  padding: var(--space-3);
+  color: var(--gray-1);
+}
+
+/* Assistant message styles */
+.messageContainer[data-role="assistant"] {
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.assistantMessage {
+  background: transparent;
+}
+
+/* Content wrapper */
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .messageContainer[data-role="user"] {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .messageContainer[data-role="user"] {
+    max-width: 95%;
+  }
+
+  .userMessage {
+    padding: var(--space-2);
+  }
+}
+
+/* Loading indicator container */
+.loadingIndicator {
+  margin-top: var(--space-1);
+}

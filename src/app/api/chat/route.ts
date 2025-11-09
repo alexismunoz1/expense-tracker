@@ -1,22 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
 import { xai } from "@ai-sdk/xai";
-import { convertToModelMessages, streamText, UIMessage, stepCountIs, tool } from "ai";
-import { executeGestionarGasto, executeGestionarCategoria, executeProcesarImagenRecibo } from "@/utils/tools";
-import { gestionarGastoSchema, gestionarCategoriaSchema } from "@/schemas/tools";
+import { convertToModelMessages, streamText, stepCountIs, tool } from "ai";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import {
+  gestionarGastoSchema,
+  gestionarCategoriaSchema,
+} from "@/schemas/tools";
+import {
+  executeGestionarGasto,
+  executeGestionarCategoria,
+  executeProcesarImagenRecibo,
+} from "@/utils/tools";
 import { getUserProfile } from "@/utils/user-profile";
-
+import type { UIMessage } from "ai";
+import type { NextRequest } from "next/server";
 
 const model = xai("grok-3");
 
 // Función helper para filtrar imágenes de los mensajes
 // Grok-3 no soporta imágenes, solo texto
 const removeImagesFromMessages = (messages: UIMessage[]): UIMessage[] => {
-  return messages.map(msg => {
+  return messages.map((msg) => {
     if (msg.parts) {
       // Filtrar solo las partes de texto, eliminar imágenes
-      const textParts = msg.parts.filter(part => part.type === "text");
+      const textParts = msg.parts.filter((part) => part.type === "text");
       return {
         ...msg,
         parts: textParts,
@@ -35,7 +43,10 @@ export async function POST(req: NextRequest) {
   try {
     // Check authentication
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -48,8 +59,9 @@ export async function POST(req: NextRequest) {
 
     // Get user profile to determine preferred currency
     const userProfile = await getUserProfile(userId);
-    const userCurrency = userProfile?.preferred_currency || 'USD';
-    const currencyName = userCurrency === 'USD' ? 'dólares (USD)' : 'pesos argentinos (ARS)';
+    const userCurrency = userProfile?.preferred_currency || "USD";
+    const currencyName =
+      userCurrency === "USD" ? "dólares (USD)" : "pesos argentinos (ARS)";
 
     // Validar request body
     const body = await req.json();
@@ -64,12 +76,15 @@ export async function POST(req: NextRequest) {
 
     const { messages }: { messages: UIMessage[] } = validation.data;
 
-
     const lastMessage = messages[messages.length - 1];
-    const hasImage = lastMessage?.parts?.some(part => part.type === "file" && part.mediaType?.startsWith("image/"));
+    const hasImage = lastMessage?.parts?.some(
+      (part) => part.type === "file" && part.mediaType?.startsWith("image/")
+    );
 
     if (hasImage) {
-      const imagePart = lastMessage.parts.find(part => part.type === "file" && part.mediaType?.startsWith("image/"));
+      const imagePart = lastMessage.parts.find(
+        (part) => part.type === "file" && part.mediaType?.startsWith("image/")
+      );
       if (imagePart && imagePart.type === "file") {
         const imageUrl = imagePart.url;
         let base64Data: string;
@@ -92,10 +107,13 @@ export async function POST(req: NextRequest) {
 
         let processingResult;
         try {
-          processingResult = await executeProcesarImagenRecibo({
-            imagenBase64: base64Data,
-            mimeType,
-          }, userId);
+          processingResult = await executeProcesarImagenRecibo(
+            {
+              imagenBase64: base64Data,
+              mimeType,
+            },
+            userId
+          );
         } catch (error) {
           console.error("Error al procesar imagen:", error);
           processingResult = {
@@ -108,8 +126,7 @@ Por favor, intenta nuevamente o registra el gasto manualmente proporcionando los
         }
 
         // Determinar el system prompt basado en si se requiere clarificación
-        let systemPrompt =
-          `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
+        let systemPrompt = `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
 
 **HERRAMIENTAS DISPONIBLES:**
 • gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
@@ -119,6 +136,8 @@ Por favor, intenta nuevamente o registra el gasto manualmente proporcionando los
 - Cuando el usuario pida crear, modificar u obtener gastos/categorías, ejecuta la herramienta correspondiente INMEDIATAMENTE
 - NO generes texto de confirmación ANTES de usar la herramienta (ej: "¡Entendido! Voy a registrar...")
 - SOLO responde DESPUÉS de que la herramienta se haya ejecutado, mostrando los resultados
+- NUNCA muestres el ID del gasto al usuario en respuestas individuales
+- Cuando muestres fechas individuales, formátealas en español (ej: "8 de noviembre de 2025" en lugar de ISO 8601)
 
 Categorías: alimentacion, transporte, entretenimiento, salud, educacion, servicios, otros
 
@@ -177,7 +196,10 @@ Para listar gastos, envuelve el JSON entre marcadores especiales:
 - NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real`;
 
         // Si se requiere clarificación, agregar instrucciones especiales
-        if (processingResult.requiresClarification && processingResult.extractedData) {
+        if (
+          processingResult.requiresClarification &&
+          processingResult.extractedData
+        ) {
           const { amount, category } = processingResult.extractedData;
           systemPrompt += `\n\n**CONTEXTO IMPORTANTE - RECIBO PENDIENTE:**
 He procesado un recibo pero la descripción no está clara. Los datos detectados son:
@@ -195,7 +217,9 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
         }
 
         // Filtrar imágenes de mensajes anteriores antes de enviar al modelo
-        const messagesWithoutImages = removeImagesFromMessages(messages.slice(0, -1));
+        const messagesWithoutImages = removeImagesFromMessages(
+          messages.slice(0, -1)
+        );
 
         const result = streamText({
           model,
@@ -204,11 +228,15 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
             ...convertToModelMessages(messagesWithoutImages),
             {
               role: "user",
-              content: lastMessage.parts.find(p => p.type === "text")?.text || "Analiza esta imagen y crea un gasto automáticamente",
+              content:
+                lastMessage.parts.find((p) => p.type === "text")?.text ||
+                "Analiza esta imagen y crea un gasto automáticamente",
             },
             {
               role: "assistant",
-              content: processingResult.message || "El recibo ha sido procesado y el gasto ha sido registrado.",
+              content:
+                processingResult.message ||
+                "El recibo ha sido procesado y el gasto ha sido registrado.",
             },
           ],
           tools: {
@@ -237,8 +265,7 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
 
     const result = streamText({
       model,
-      system:
-        `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
+      system: `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
 
 **HERRAMIENTAS DISPONIBLES:**
 • gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
@@ -342,7 +369,8 @@ Para listar gastos, envuelve el JSON entre marcadores especiales:
 
     // Retornar un stream response incluso en caso de error
     // para que useChat actualice correctamente su status
-    const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+    const errorMessage =
+      error instanceof Error ? error.message : "Error desconocido";
     const result = streamText({
       model,
       system: "Eres un asistente de gastos personal.",

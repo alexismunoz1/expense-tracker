@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 export interface ImageProcessingState {
   selectedFile: File | null;
@@ -18,8 +18,8 @@ export interface ImageProcessingHandlers {
 // export const useImageProcessing = (
 //   sendMessage: (message: { text: string }) => void
 // ): ImageProcessingState & ImageProcessingHandlers => {
-  // Estados comentados - descomentar para habilitar
-  /*
+// Estados comentados - descomentar para habilitar
+/*
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
@@ -76,7 +76,7 @@ export interface ImageProcessingHandlers {
   };
   */
 
-  // Versión deshabilitada temporal - reemplazar con código de arriba
+// Versión deshabilitada temporal - reemplazar con código de arriba
 //   return {
 //     selectedFile: null,
 //     isProcessingImage: false,
@@ -235,7 +235,10 @@ export const fileToBase64 = async (file: File): Promise<string> => {
 /**
  * Crea el mensaje para el asistente con datos de imagen embebidos
  */
-export const createImageMessage = (base64: string, mimeType: string): string => {
+export const createImageMessage = (
+  base64: string,
+  mimeType: string
+): string => {
   return `He subido una imagen de un recibo. Por favor analízala y crea un gasto automáticamente.
 
 [IMAGEN_DATA:${base64}:${mimeType}]`;

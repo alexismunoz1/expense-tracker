@@ -1,8 +1,8 @@
 import { memo, useRef, useEffect } from "react";
-import { Box, Flex, TextArea, Text } from "@radix-ui/themes";
-import { HiddenFileInputs } from "./hidden-file-inputs";
+import { Box, Flex, TextArea } from "@radix-ui/themes";
 import { ChatSubmitButton } from "./chat-submit-button";
 import { FileUploadDialog } from "./file-upload-dialog";
+import { HiddenFileInputs } from "./hidden-file-inputs";
 import type { ChatStatus } from "../types";
 
 const CONTAINER_STYLE = {
@@ -74,9 +74,7 @@ export const ChatInputArea = memo(function ChatInputArea({
     <Box p="3" style={CONTAINER_STYLE}>
       <form onSubmit={onSubmit}>
         <Flex direction="column" gap="2">
-
           <Flex gap="2" align="center">
-
             <Box style={INPUT_STYLE}>
               <TextArea
                 ref={textareaRef}

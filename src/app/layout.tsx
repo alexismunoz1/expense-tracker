@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
+import type { Metadata } from "next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Expense Tracker - Gestiona tus gastos con IA",
-  description: "Aplicación inteligente para gestionar tus gastos y finanzas personales con ayuda de inteligencia artificial",
+  description:
+    "Aplicación inteligente para gestionar tus gastos y finanzas personales con ayuda de inteligencia artificial",
 };
 
 export default function RootLayout({
@@ -26,7 +27,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>

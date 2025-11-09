@@ -1,6 +1,6 @@
-import 'server-only'
+import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { Expense, Category } from "@/types/expense";
+import type { Expense, Category } from "@/types/expense";
 
 /**
  * Save a new expense to the database
@@ -11,17 +11,15 @@ export const saveExpense = async (expense: Expense): Promise<void> => {
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase
-      .from('expenses')
-      .insert({
-        id: expense.id,
-        user_id: expense.user_id,
-        titulo: expense.titulo,
-        precio: expense.precio,
-        currency: expense.currency,
-        categoria: expense.categoria,
-        fecha: expense.fecha,
-      });
+    const { error } = await supabase.from("expenses").insert({
+      id: expense.id,
+      user_id: expense.user_id,
+      titulo: expense.titulo,
+      precio: expense.precio,
+      currency: expense.currency,
+      categoria: expense.categoria,
+      fecha: expense.fecha,
+    });
 
     if (error) {
       console.error("Supabase error saving expense:", error);
@@ -42,23 +40,26 @@ export const getExpenses = async (): Promise<Expense[]> => {
     const supabase = await createClient();
 
     // Debug: Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     console.log("🔍 [getExpenses] Auth status:", {
       user: user ? { id: user.id, email: user.email } : null,
-      authError: authError?.message
+      authError: authError?.message,
     });
 
     const { data, error } = await supabase
-      .from('expenses')
-      .select('*')
-      .order('fecha', { ascending: false });
+      .from("expenses")
+      .select("*")
+      .order("fecha", { ascending: false });
 
     console.log("🔍 [getExpenses] Query result:", {
       dataCount: data?.length || 0,
       error: error?.message,
       errorCode: error?.code,
       errorDetails: error?.details,
-      errorHint: error?.hint
+      errorHint: error?.hint,
     });
 
     if (error) {
@@ -66,7 +67,11 @@ export const getExpenses = async (): Promise<Expense[]> => {
       throw new Error("Error al leer los gastos");
     }
 
-    console.log("✅ [getExpenses] Success:", data?.length || 0, "expenses found");
+    console.log(
+      "✅ [getExpenses] Success:",
+      data?.length || 0,
+      "expenses found"
+    );
     return data || [];
   } catch (error) {
     console.error("❌ Error reading expenses:", error);
@@ -83,13 +88,13 @@ export const getExpenseById = async (id: string): Promise<Expense | null> => {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('expenses')
-      .select('*')
-      .eq('id', id)
+      .from("expenses")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         // No rows returned
         return null;
       }
@@ -110,13 +115,13 @@ export const getExpenseById = async (id: string): Promise<Expense | null> => {
  */
 export const updateExpense = async (
   id: string,
-  updates: Partial<Omit<Expense, 'id' | 'user_id' | 'created_at'>>
+  updates: Partial<Omit<Expense, "id" | "user_id" | "created_at">>
 ): Promise<Expense | null> => {
   try {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('expenses')
+      .from("expenses")
       .update({
         ...(updates.titulo && { titulo: updates.titulo }),
         ...(updates.precio !== undefined && { precio: updates.precio }),
@@ -124,12 +129,12 @@ export const updateExpense = async (
         ...(updates.categoria && { categoria: updates.categoria }),
         ...(updates.fecha && { fecha: updates.fecha }),
       })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         // No rows returned - either doesn't exist or not owned by user
         return null;
       }
@@ -153,9 +158,9 @@ export const getCategories = async (): Promise<Category[]> => {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('nombre', { ascending: true });
+      .from("categories")
+      .select("*")
+      .order("nombre", { ascending: true });
 
     if (error) {
       console.error("Supabase error reading categories:", error);
@@ -177,13 +182,13 @@ export const getCategoryById = async (id: string): Promise<Category | null> => {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
+      .from("categories")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return null;
       }
       console.error("Supabase error getting category by ID:", error);
@@ -206,15 +211,13 @@ export const saveCategory = async (category: Category): Promise<void> => {
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase
-      .from('categories')
-      .upsert({
-        id: category.id,
-        nombre: category.nombre,
-        color: category.color,
-        icono: category.icono,
-        fecha_creacion: category.fechaCreacion,
-      });
+    const { error } = await supabase.from("categories").upsert({
+      id: category.id,
+      nombre: category.nombre,
+      color: category.color,
+      icono: category.icono,
+      fecha_creacion: category.fechaCreacion,
+    });
 
     if (error) {
       console.error("Supabase error saving category:", error);

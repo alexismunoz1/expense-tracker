@@ -1,7 +1,7 @@
-import { createWorker } from "tesseract.js";
 import { nanoid } from "nanoid";
-import { Expense, Category, CurrencyCode } from "@/types/expense";
-import {
+import { createWorker } from "tesseract.js";
+import type { Expense, Category, CurrencyCode } from "@/types/expense";
+import type {
   GestionarGastoInput,
   GestionarCategoriaInput,
   ProcesarImagenReciboInput,
@@ -17,6 +17,8 @@ import {
   ModificarGastoResponse,
   OcrResult,
   ExtractedOcrData,
+} from "@/types/tools";
+import {
   isValidGastoAccion,
   isValidCategoriaAccion,
   CAMPOS_REQUERIDOS_CREAR_GASTO,
@@ -25,6 +27,7 @@ import {
   GASTO_ACCIONES,
   CATEGORIA_ACCIONES,
 } from "@/types/tools";
+import { parseCurrencyFromText, formatCurrency } from "./currency";
 import {
   saveExpense,
   getExpenses,
@@ -34,63 +37,71 @@ import {
   getExpenseById,
 } from "./expenses";
 import { getUserProfile } from "./user-profile";
-import { parseCurrencyFromText, formatCurrency } from "./currency";
 
 // === FUNCIONES AGRUPADAS ===
 
 // Gestor principal de gastos
-export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInput, userId: string): Promise<GastoResponse> => {
+export const executeGestionarGasto = async (
+  { accion, datos }: GestionarGastoInput,
+  userId: string
+): Promise<GastoResponse> => {
   try {
     // Validar acción
     if (!isValidGastoAccion(accion)) {
       return {
         success: false,
-        message: `Acción no válida. Acciones permitidas: ${GASTO_ACCIONES.join(', ')}`,
+        message: `Acción no válida. Acciones permitidas: ${GASTO_ACCIONES.join(", ")}`,
       };
     }
 
     switch (accion) {
-      case 'crear':
+      case "crear":
         // Validar campos requeridos usando constantes
         const camposFaltantes = CAMPOS_REQUERIDOS_CREAR_GASTO.filter(
-          campo => !datos[campo as keyof typeof datos]
+          (campo) => !datos[campo as keyof typeof datos]
         );
 
         if (camposFaltantes.length > 0) {
           return {
             success: false,
-            message: `Para crear un gasto necesitas: ${camposFaltantes.join(', ')}`,
+            message: `Para crear un gasto necesitas: ${camposFaltantes.join(", ")}`,
           };
         }
-        return await executeGuardarGasto({
-          titulo: datos.titulo!,
-          precio: datos.precio!,
-          categoria: datos.categoria!,
-          divisa: datos.divisa,
-        }, userId);
+        return await executeGuardarGasto(
+          {
+            titulo: datos.titulo!,
+            precio: datos.precio!,
+            categoria: datos.categoria!,
+            divisa: datos.divisa,
+          },
+          userId
+        );
 
-      case 'obtener':
+      case "obtener":
         const expenses = await getExpenses();
         let filteredExpenses = expenses;
 
         // Aplicar filtros si existen
         if (datos.filtros?.categoria) {
           filteredExpenses = filteredExpenses.filter(
-            expense => expense.categoria === datos.filtros!.categoria
+            (expense) => expense.categoria === datos.filtros!.categoria
           );
         }
 
-        const total = filteredExpenses.reduce((sum, expense) => sum + expense.precio, 0);
-        
+        const total = filteredExpenses.reduce(
+          (sum, expense) => sum + expense.precio,
+          0
+        );
+
         return {
           success: true,
-          message: `Se encontraron ${filteredExpenses.length} gastos${datos.filtros?.categoria ? ` en categoría ${datos.filtros.categoria}` : ''} con un total de $${total.toFixed(2)}`,
+          message: `Se encontraron ${filteredExpenses.length} gastos${datos.filtros?.categoria ? ` en categoría ${datos.filtros.categoria}` : ""} con un total de $${total.toFixed(2)}`,
           expenses: filteredExpenses,
           total,
           count: filteredExpenses.length,
         };
 
-      case 'modificar':
+      case "modificar":
         if (!datos.id) {
           return {
             success: false,
@@ -121,27 +132,30 @@ export const executeGestionarGasto = async ({ accion, datos }: GestionarGastoInp
 };
 
 // Gestor principal de categorías
-export const executeGestionarCategoria = async ({ accion, datos }: GestionarCategoriaInput): Promise<CategoriaResponse> => {
+export const executeGestionarCategoria = async ({
+  accion,
+  datos,
+}: GestionarCategoriaInput): Promise<CategoriaResponse> => {
   try {
     // Validar acción
     if (!isValidCategoriaAccion(accion)) {
       return {
         success: false,
-        message: `Acción no válida. Acciones permitidas: ${CATEGORIA_ACCIONES.join(', ')}`,
+        message: `Acción no válida. Acciones permitidas: ${CATEGORIA_ACCIONES.join(", ")}`,
       };
     }
 
     switch (accion) {
-      case 'crear':
+      case "crear":
         // Validar campos requeridos usando constantes
         const camposFaltantes = CAMPOS_REQUERIDOS_CREAR_CATEGORIA.filter(
-          campo => !datos?.[campo as keyof typeof datos]
+          (campo) => !datos?.[campo as keyof typeof datos]
         );
-        
+
         if (camposFaltantes.length > 0) {
           return {
             success: false,
-            message: `Para crear una categoría necesitas: ${camposFaltantes.join(', ')}`,
+            message: `Para crear una categoría necesitas: ${camposFaltantes.join(", ")}`,
           };
         }
         return await executeCrearCategoria({
@@ -150,7 +164,7 @@ export const executeGestionarCategoria = async ({ accion, datos }: GestionarCate
           icono: datos!.icono!,
         });
 
-      case 'obtener':
+      case "obtener":
         return await executeObtenerCategorias();
 
       default:
@@ -169,15 +183,13 @@ export const executeGestionarCategoria = async ({ accion, datos }: GestionarCate
 };
 
 // Función para guardar un nuevo gasto
-export const executeGuardarGasto = async ({
-  titulo,
-  precio,
-  categoria,
-  divisa,
-}: GuardarGastoInput, userId: string): Promise<CrearGastoResponse> => {
+export const executeGuardarGasto = async (
+  { titulo, precio, categoria, divisa }: GuardarGastoInput,
+  userId: string
+): Promise<CrearGastoResponse> => {
   try {
     // Determinar la divisa a usar
-    let currency: CurrencyCode = 'USD'; // Fallback por defecto
+    let currency: CurrencyCode = "USD"; // Fallback por defecto
 
     // 1. Si se especificó divisa explícitamente, usar esa
     if (divisa) {
@@ -224,27 +236,28 @@ export const executeGuardarGasto = async ({
 };
 
 // Función para obtener todos los gastos
-export const executeObtenerGastos = async (): Promise<ObtenerGastosResponse> => {
-  try {
-    const expenses = await getExpenses();
-    const total = expenses.reduce((sum, expense) => sum + expense.precio, 0);
+export const executeObtenerGastos =
+  async (): Promise<ObtenerGastosResponse> => {
+    try {
+      const expenses = await getExpenses();
+      const total = expenses.reduce((sum, expense) => sum + expense.precio, 0);
 
-    return {
-      success: true,
-      message: `Se encontraron ${expenses.length} gastos con un total de $${total.toFixed(
-        2
-      )}`,
-      expenses,
-      total,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: "Error al obtener los gastos",
-      error: error instanceof Error ? error.message : "Error desconocido",
-    };
-  }
-};
+      return {
+        success: true,
+        message: `Se encontraron ${expenses.length} gastos con un total de $${total.toFixed(
+          2
+        )}`,
+        expenses,
+        total,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error al obtener los gastos",
+        error: error instanceof Error ? error.message : "Error desconocido",
+      };
+    }
+  };
 
 // Función para crear una nueva categoría
 export const executeCrearCategoria = async ({
@@ -277,22 +290,23 @@ export const executeCrearCategoria = async ({
 };
 
 // Función para obtener todas las categorías
-export const executeObtenerCategorias = async (): Promise<ObtenerCategoriasResponse> => {
-  try {
-    const categories = await getCategories();
-    return {
-      success: true,
-      message: `Se encontraron ${categories.length} categorías disponibles`,
-      categories,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: "Error al obtener las categorías",
-      error: error instanceof Error ? error.message : "Error desconocido",
-    };
-  }
-};
+export const executeObtenerCategorias =
+  async (): Promise<ObtenerCategoriasResponse> => {
+    try {
+      const categories = await getCategories();
+      return {
+        success: true,
+        message: `Se encontraron ${categories.length} categorías disponibles`,
+        categories,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error al obtener las categorías",
+        error: error instanceof Error ? error.message : "Error desconocido",
+      };
+    }
+  };
 
 // Función para modificar un gasto existente
 export const executeModificarGasto = async ({
@@ -307,7 +321,7 @@ export const executeModificarGasto = async ({
     if (!id) {
       return {
         success: false,
-        message: `Campo requerido faltante: ${CAMPOS_REQUERIDOS_MODIFICAR_GASTO.join(', ')}`,
+        message: `Campo requerido faltante: ${CAMPOS_REQUERIDOS_MODIFICAR_GASTO.join(", ")}`,
       };
     }
 
@@ -321,16 +335,21 @@ export const executeModificarGasto = async ({
     }
 
     // Verificar que se proporciona al menos un campo para actualizar
-    const camposActualizacion = ['titulo', 'precio', 'divisa', 'categoria'] as const;
-    const camposProporcionados = camposActualizacion.filter(campo => {
+    const camposActualizacion = [
+      "titulo",
+      "precio",
+      "divisa",
+      "categoria",
+    ] as const;
+    const camposProporcionados = camposActualizacion.filter((campo) => {
       const valor = { titulo, precio, divisa, categoria }[campo];
-      return valor !== undefined && valor !== null && valor !== '';
+      return valor !== undefined && valor !== null && valor !== "";
     });
 
     if (camposProporcionados.length === 0) {
       return {
         success: false,
-        message: `Debes proporcionar al menos uno de estos campos: ${camposActualizacion.join(', ')}`,
+        message: `Debes proporcionar al menos uno de estos campos: ${camposActualizacion.join(", ")}`,
       };
     }
 
@@ -339,7 +358,7 @@ export const executeModificarGasto = async ({
       titulo,
       precio,
       currency: divisa as CurrencyCode | undefined,
-      categoria
+      categoria,
     });
 
     if (!updatedExpense) {
@@ -365,7 +384,10 @@ export const executeModificarGasto = async ({
 };
 
 // Función auxiliar para validar si una descripción es clara o no
-const isDescriptionUnclear = (description: string, ocrConfidence: number): boolean => {
+const isDescriptionUnclear = (
+  description: string,
+  ocrConfidence: number
+): boolean => {
   // Criterio 1: Descripción muy corta (< 5 caracteres)
   if (description.trim().length < 5) {
     return true;
@@ -403,7 +425,8 @@ const extractAmount = (text: string): number => {
   for (const pattern of patterns) {
     const matches = text.matchAll(pattern);
     for (const match of matches) {
-      const amountStr = match[1]?.replace(/[,.\s]/g, "") || match[0]?.replace(/[$€,.\s]/g, "");
+      const amountStr =
+        match[1]?.replace(/[,.\s]/g, "") || match[0]?.replace(/[$€,.\s]/g, "");
       const amount = parseFloat(amountStr);
       if (!isNaN(amount) && amount > 0 && amount < 1000000) {
         amounts.push(amount);
@@ -530,10 +553,10 @@ const inferCategory = (text: string): string => {
 };
 
 // Función para procesar imagen de recibo con Tesseract.js OCR
-export const executeProcesarImagenRecibo = async ({
-  imagenBase64,
-  mimeType,
-}: ProcesarImagenReciboInput, userId: string) => {
+export const executeProcesarImagenRecibo = async (
+  { imagenBase64, mimeType }: ProcesarImagenReciboInput,
+  userId: string
+) => {
   let worker;
 
   try {
@@ -610,7 +633,10 @@ export const executeProcesarImagenRecibo = async ({
     // Crear el gasto automáticamente usando la función saveExpense
     if (extractedData.amount > 0) {
       // Verificar si la descripción es clara o no
-      const descriptionUnclear = isDescriptionUnclear(extractedData.description, confidence);
+      const descriptionUnclear = isDescriptionUnclear(
+        extractedData.description,
+        confidence
+      );
 
       if (descriptionUnclear) {
         // Descripción no clara: NO crear el gasto, solicitar aclaración al usuario
@@ -642,7 +668,7 @@ export const executeProcesarImagenRecibo = async ({
         // Descripción clara: crear el gasto automáticamente (comportamiento actual)
         // Obtener la divisa preferida del usuario
         const userProfile = await getUserProfile(userId);
-        const currency = userProfile?.preferred_currency || 'USD';
+        const currency = userProfile?.preferred_currency || "USD";
 
         const expense: Expense = {
           id: nanoid(),
@@ -656,22 +682,19 @@ export const executeProcesarImagenRecibo = async ({
 
         await saveExpense(expense);
 
+        // Formatear monto con la divisa
+        const formattedAmount = formatCurrency(extractedData.amount, currency);
+
         const result: OcrResult = {
           requiresClarification: false,
           expense: expense,
-          message: `✅ **Recibo procesado y gasto registrado exitosamente**
+          message: `✅ **Gasto registrado con éxito**
 
-        📋 **Datos extraídos:**
-        - **Descripción:** ${extractedData.description}
-        - **Precio:** $${extractedData.amount.toFixed(2)}
-        - **Categoría:** ${extractedData.category}
-        - **Confianza:** ${extractedData.confidence}
+- **Descripción:** ${extractedData.description}
+- **Precio:** ${formattedAmount}
+- **Categoría:** ${extractedData.category}
 
-        💾 **Gasto registrado:**
-        - **ID:** ${expense.id}
-        - **Fecha:** ${expense.fecha}
-
-        ${extractedData.details ? `ℹ️ **Detalles:** ${extractedData.details}` : ""}`,
+Si necesitas modificar algún detalle, por favor indícamelo.`,
         };
 
         return result;

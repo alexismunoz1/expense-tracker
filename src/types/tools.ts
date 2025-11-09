@@ -1,4 +1,4 @@
-import { Expense, Category } from "./expense";
+import type { Expense, Category } from "./expense";
 
 // === CONSTANTES DE ACCIONES ===
 
@@ -107,17 +107,27 @@ export const isValidGastoAccion = (accion: string): accion is GastoAccion => {
 };
 
 // Función para validar si una acción es válida para categorías
-export const isValidCategoriaAccion = (accion: string): accion is CategoriaAccion => {
+export const isValidCategoriaAccion = (
+  accion: string
+): accion is CategoriaAccion => {
   return CATEGORIA_ACCIONES.includes(accion as CategoriaAccion);
 };
 
 // === CONSTANTES DE VALIDACIÓN ===
 
 // Campos requeridos para crear un gasto
-export const CAMPOS_REQUERIDOS_CREAR_GASTO = ["titulo", "precio", "categoria"] as const;
+export const CAMPOS_REQUERIDOS_CREAR_GASTO = [
+  "titulo",
+  "precio",
+  "categoria",
+] as const;
 
 // Campos requeridos para crear una categoría
-export const CAMPOS_REQUERIDOS_CREAR_CATEGORIA = ["nombre", "color", "icono"] as const;
+export const CAMPOS_REQUERIDOS_CREAR_CATEGORIA = [
+  "nombre",
+  "color",
+  "icono",
+] as const;
 
 // Campos requeridos para modificar un gasto
 export const CAMPOS_REQUERIDOS_MODIFICAR_GASTO = ["id"] as const;

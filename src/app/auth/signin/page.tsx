@@ -1,10 +1,19 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-import { Flex, Card, Heading, Text, Button, Callout, Container, Spinner } from "@radix-ui/themes";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
+import {
+  Flex,
+  Card,
+  Heading,
+  Text,
+  Button,
+  Callout,
+  Container,
+  Spinner,
+} from "@radix-ui/themes";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 function SignInForm() {
   const searchParams = useSearchParams();
@@ -106,7 +115,8 @@ function SignInForm() {
             </Button>
 
             <Text align="center" size="2" color="gray">
-              Al continuar, aceptas nuestros términos de servicio y política de privacidad.
+              Al continuar, aceptas nuestros términos de servicio y política de
+              privacidad.
             </Text>
           </Flex>
         </Card>

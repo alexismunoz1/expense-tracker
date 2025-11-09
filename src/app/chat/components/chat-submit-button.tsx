@@ -1,6 +1,6 @@
 import { memo } from "react";
-import { Button } from "@radix-ui/themes";
 import { ArrowUpIcon, SquareIcon } from "@radix-ui/react-icons";
+import { Button } from "@radix-ui/themes";
 import type { ChatStatus } from "../types";
 
 const BUTTON_STYLE = { padding: "0.75rem" } as const;
@@ -34,7 +34,7 @@ export const ChatSubmitButton = memo(function ChatSubmitButton({
         aria-label="Detener generación"
         title="Detener generación"
       >
-        <SquareIcon/>
+        <SquareIcon />
       </Button>
     );
   }

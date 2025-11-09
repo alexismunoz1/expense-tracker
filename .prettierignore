@@ -1,0 +1,10 @@
+.next
+node_modules
+.yarn
+dist
+build
+coverage
+*.min.js
+*.min.css
+package-lock.json
+yarn.lock

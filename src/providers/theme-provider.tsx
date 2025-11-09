@@ -1,8 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
-import type { ReactNode } from "react";
 
 interface ThemeProviderProps {
   children: ReactNode;

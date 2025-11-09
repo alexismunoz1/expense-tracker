@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CurrencyCode, CURRENCY_INFO } from "@/types/expense";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
 import {
   Flex,
   Card,
@@ -14,7 +13,9 @@ import {
   Spinner,
   Select,
 } from "@radix-ui/themes";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { useRouter } from "next/navigation";
+import type { CurrencyCode } from "@/types/expense";
+import { CURRENCY_INFO } from "@/types/expense";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -99,7 +100,8 @@ export default function OnboardingPage() {
                   ¿Qué divisa utilizas principalmente?
                 </Text>
                 <Text size="2" color="gray">
-                  Podrás especificar otras divisas al crear gastos si lo necesitas
+                  Podrás especificar otras divisas al crear gastos si lo
+                  necesitas
                 </Text>
               </Flex>
 

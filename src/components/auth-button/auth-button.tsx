@@ -1,13 +1,13 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import type { User } from "@supabase/supabase-js";
-import { DropdownMenu, Avatar, Flex, Text, Skeleton } from "@radix-ui/themes";
+import { memo, useEffect, useState } from "react";
 import { ExitIcon } from "@radix-ui/react-icons";
+import { Avatar, DropdownMenu, Flex, Skeleton, Text } from "@radix-ui/themes";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
-export default function AuthButton() {
+export const AuthButton = memo(function AuthButton() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +49,8 @@ export default function AuthButton() {
     return null;
   }
 
-  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuario";
+  const displayName =
+    user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuario";
   const initials = displayName[0]?.toUpperCase() || "U";
 
   return (
@@ -76,7 +77,6 @@ export default function AuthButton() {
               {user.email}
             </Text>
           </Flex>
-
         </Flex>
       </DropdownMenu.Trigger>
 
@@ -94,4 +94,4 @@ export default function AuthButton() {
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );
-}
+});

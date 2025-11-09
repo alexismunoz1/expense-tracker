@@ -1,6 +1,11 @@
 import { memo, useState } from "react";
+import {
+  ImageIcon,
+  CameraIcon,
+  PlusIcon,
+  Cross2Icon,
+} from "@radix-ui/react-icons";
 import { Dialog, Button, Flex, Text, IconButton, Box } from "@radix-ui/themes";
-import { ImageIcon, CameraIcon, PlusIcon, Cross2Icon } from "@radix-ui/react-icons";
 
 interface FileUploadDialogProps {
   onGalleryClick: () => void;

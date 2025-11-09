@@ -1,5 +1,4 @@
-import { memo } from "react";
-import Image from "next/image";
+import { memo, useMemo } from "react";
 import { Box } from "@radix-ui/themes";
 import type { FilePart } from "../types";
 
@@ -11,6 +10,7 @@ interface MessageImageProps {
 
 /**
  * Renders an image attachment within a message
+ * Uses native img tag to avoid React warnings with large base64 data URLs
  * Memoized to prevent unnecessary re-renders
  */
 export const MessageImage = memo(function MessageImage({
@@ -18,15 +18,25 @@ export const MessageImage = memo(function MessageImage({
   messageId,
   index,
 }: MessageImageProps) {
+  // Create a stable reference to avoid React warnings with large base64 strings
+  const imageKey = useMemo(
+    () => `file-${messageId}-${index}`,
+    [messageId, index]
+  );
+
   return (
-    <Box key={`file-${messageId}-${index}`}>
-      <Image
+    <Box key={imageKey}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={part.url}
         alt={part.filename || "Imagen adjunta"}
-        width={400}
-        height={300}
-        style={{ borderRadius: "var(--radius-3)", maxWidth: "100%" }}
-        unoptimized
+        style={{
+          borderRadius: "var(--radius-3)",
+          maxWidth: "100%",
+          height: "auto",
+          width: "400px",
+        }}
+        loading="lazy"
       />
     </Box>
   );

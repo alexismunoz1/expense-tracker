@@ -1,11 +1,21 @@
 import type { MessagePart, TextPart, FilePart, Message } from "../types";
 
 /**
+ * Checks if a text string is a base64 data URL (should not be rendered as text)
+ */
+function isBase64DataUrl(text: string | undefined): boolean {
+  if (!text) return false;
+  return text.startsWith("data:image/") && text.includes("base64,");
+}
+
+/**
  * Filters and returns only text parts from message parts
+ * Excludes base64 data URLs which should be rendered as images
  */
 export function getTextParts(parts: MessagePart[]): TextPart[] {
   return parts.filter(
-    (part): part is TextPart => part.type === "text"
+    (part): part is TextPart =>
+      part.type === "text" && !isBase64DataUrl(part.text)
   );
 }
 
@@ -62,7 +72,9 @@ export function hasMessageContent(message: Message): boolean {
   const textParts = getTextParts(message.parts);
   const fileParts = getImageParts(message.parts);
 
-  const hasText = textParts.some((part) => part.text && part.text.trim().length > 0);
+  const hasText = textParts.some(
+    (part) => part.text && part.text.trim().length > 0
+  );
   const hasFiles = fileParts.length > 0;
 
   return hasText || hasFiles;
@@ -74,4 +86,17 @@ export function hasMessageContent(message: Message): boolean {
 export function getMessageText(message: Message): string | null {
   const textParts = getTextParts(message.parts);
   return combineTextParts(textParts);
+}
+
+/**
+ * Checks if a message has an internal loading indicator
+ * (e.g., incomplete expense-list-json block)
+ */
+export function hasInternalLoadingIndicator(message: Message): boolean {
+  const text = getMessageText(message);
+  if (!text) return false;
+
+  // Check for incomplete expense list JSON block (streaming)
+  const incompleteExpenseListRegex = /:::expense-list-json\s*\n([\s\S]*?)$/;
+  return incompleteExpenseListRegex.test(text);
 }

@@ -19,6 +19,16 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 
 **File Naming:** All files use kebab-case (e.g., `user-profile.ts`, `chat-message.tsx`, `use-file-upload.ts`)
 
+**Design System:** Follow rules defined in `DESIGN_SYSTEM.md`:
+
+- Use `const` + `memo()` for components (not `function`)
+- Named exports only (no `export default` except pages/config)
+- Types in separate `.types.ts` files
+- Styles in `.module.css` files for complex styling
+- Each component in its own directory
+- UI components must be agnostic (no business logic)
+- Use `import type` for type-only imports
+
 ## Tech Stack
 
 - **Next.js 16** + React 19 + TypeScript
@@ -34,6 +44,7 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 ## Architecture
 
 ### Core Components
+
 - `src/app/api/chat/route.ts` - Streaming chat with tool execution + auth
 - `src/schemas/tools.ts` - Zod schemas for AI tools
 - `src/utils/tools.ts` - Tool executors
@@ -42,28 +53,33 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 - `src/proxy.ts` - Session management + route protection
 
 ### AI Tools (Grok-3)
+
 1. **gestionarGasto** - crear/obtener/modificar expenses (multi-currency: USD/ARS, auto-detection)
 2. **gestionarCategoria** - crear/obtener categories
 3. **procesarImagenRecibo** - OCR with Tesseract.js, smart clarification for unclear descriptions
 
 ### Data Model
+
 **Expense:** id, user_id, titulo, precio, currency (USD|ARS), categoria, fecha (ISO 8601)
 **Category:** id, user_id, nombre, color, icono, fechaCreacion
 **UserProfile:** user_id, preferred_currency, created_at, updated_at
 
 ### Database
+
 - PostgreSQL via Supabase with RLS (multi-tenant by user_id)
 - Server: `src/lib/supabase/server.ts`, Client: `src/lib/supabase/client.ts`
 
 ### Frontend
 
 **Modular Chat UI** (`src/app/chat/`)
+
 - Hooks: `useChatMessages.ts`, `useFileUpload.ts`
 - Components: 12 specialized components (ChatHeader, WelcomeScreen, ChatMessage, etc.)
 - Types: `chat.types.ts` (Message, ChatStatus, SendMessageParams, QuickAction)
 - Radix UI: Flex, Box, Button, TextField, Card, Spinner, Callout
 
 **Pages:**
+
 - `src/app/onboarding/page.tsx` - Currency selection, creates profile
 - `src/app/auth/signin/page.tsx` - OAuth sign-in
 - `src/components/AuthButton.tsx` - Profile dropdown
@@ -71,15 +87,18 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 **Features:** WCAG 2.1 AA, keyboard navigation, streaming with `useChat`, protected routes, onboarding gate
 
 ### Types
+
 - `src/types/expense.ts` - Expense, Category, UserProfile, CurrencyCode, CURRENCY_INFO
 - `src/types/tools.ts` - Tool inputs, OcrResult, isDescriptionUnclear()
 - `src/app/chat/types/chat.types.ts` - Message, MessagePart, ChatStatus
 
 ### Utilities
+
 - `src/utils/currency.ts` - formatCurrency(), parseCurrencyFromText(), extractAmountFromText()
 - `src/utils/user-profile.ts` - getUserProfile(), createUserProfile(), hasCompletedOnboarding()
 
 ### AI Config
+
 - **Grok-3** with Spanish system prompt
 - `stopWhen: stepCountIs(4)` - prevents infinite loops
 - Dynamic prompt enrichment for OCR clarification
@@ -88,6 +107,7 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 - Stream errors as messages (prevents stuck status)
 
 ### Environment Variables
+
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY

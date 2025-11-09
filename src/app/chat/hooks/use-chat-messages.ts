@@ -25,7 +25,8 @@ export function useChatMessages(): UseChatMessagesReturn {
     messages: messages as Message[],
     sendMessage: (params: SendMessageParams) => {
       sendMessage({
-        text: params.text || "Analiza esta imagen y crea un gasto automáticamente",
+        text:
+          params.text || "Analiza esta imagen y crea un gasto automáticamente",
         files: params.files,
       });
     },

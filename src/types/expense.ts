@@ -1,23 +1,23 @@
 // Currency types and constants
-export type CurrencyCode = 'USD' | 'ARS';
+export type CurrencyCode = "USD" | "ARS";
 
 export const CURRENCIES = {
-  USD: 'USD',
-  ARS: 'ARS',
+  USD: "USD",
+  ARS: "ARS",
 } as const;
 
 export const CURRENCY_INFO = {
   USD: {
-    code: 'USD' as CurrencyCode,
-    name: 'Dólares estadounidenses',
-    symbol: '$',
-    flag: '🇺🇸',
+    code: "USD" as CurrencyCode,
+    name: "Dólares estadounidenses",
+    symbol: "$",
+    flag: "🇺🇸",
   },
   ARS: {
-    code: 'ARS' as CurrencyCode,
-    name: 'Pesos argentinos',
-    symbol: '$',
-    flag: '🇦🇷',
+    code: "ARS" as CurrencyCode,
+    name: "Pesos argentinos",
+    symbol: "$",
+    flag: "🇦🇷",
   },
 } as const;
 

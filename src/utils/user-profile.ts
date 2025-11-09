@@ -1,6 +1,6 @@
-import 'server-only'
-import { createClient } from '@/lib/supabase/server';
-import { UserProfile, CurrencyCode } from '@/types/expense';
+import "server-only";
+import { createClient } from "@/lib/supabase/server";
+import type { UserProfile, CurrencyCode } from "@/types/expense";
 
 /**
  * Get user profile from database
@@ -14,19 +14,19 @@ export async function getUserProfile(
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', userId)
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
     if (error) {
-      console.error('❌ Error fetching user profile:', error);
+      console.error("❌ Error fetching user profile:", error);
       return null;
     }
 
     return data as UserProfile;
   } catch (error) {
-    console.error('❌ Unexpected error in getUserProfile:', error);
+    console.error("❌ Unexpected error in getUserProfile:", error);
     return null;
   }
 }
@@ -39,7 +39,7 @@ export async function getUserProfile(
  */
 export async function createUserProfile(
   userId: string,
-  preferredCurrency: CurrencyCode = 'USD'
+  preferredCurrency: CurrencyCode = "USD"
 ): Promise<UserProfile | null> {
   try {
     const supabase = await createClient();
@@ -52,20 +52,20 @@ export async function createUserProfile(
     };
 
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .insert(newProfile)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Error creating user profile:', error);
+      console.error("❌ Error creating user profile:", error);
       return null;
     }
 
-    console.log('✅ User profile created:', data);
+    console.log("✅ User profile created:", data);
     return data as UserProfile;
   } catch (error) {
-    console.error('❌ Unexpected error in createUserProfile:', error);
+    console.error("❌ Unexpected error in createUserProfile:", error);
     return null;
   }
 }
@@ -84,24 +84,24 @@ export async function updateUserCurrency(
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .update({
         preferred_currency: preferredCurrency,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId)
+      .eq("user_id", userId)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Error updating user currency:', error);
+      console.error("❌ Error updating user currency:", error);
       return null;
     }
 
-    console.log('✅ User currency updated:', data);
+    console.log("✅ User currency updated:", data);
     return data as UserProfile;
   } catch (error) {
-    console.error('❌ Unexpected error in updateUserCurrency:', error);
+    console.error("❌ Unexpected error in updateUserCurrency:", error);
     return null;
   }
 }
@@ -115,14 +115,17 @@ export async function updateUserCurrency(
  */
 export async function getOrCreateUserProfile(
   userId: string,
-  defaultCurrency: CurrencyCode = 'USD'
+  defaultCurrency: CurrencyCode = "USD"
 ): Promise<UserProfile | null> {
   // Try to get existing profile
   let profile = await getUserProfile(userId);
 
   // If doesn't exist, create one
   if (!profile) {
-    console.log('📝 No profile found, creating new one with currency:', defaultCurrency);
+    console.log(
+      "📝 No profile found, creating new one with currency:",
+      defaultCurrency
+    );
     profile = await createUserProfile(userId, defaultCurrency);
   }
 

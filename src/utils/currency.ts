@@ -1,4 +1,5 @@
-import { CurrencyCode, CURRENCY_INFO } from '@/types/expense';
+import type { CurrencyCode } from "@/types/expense";
+import { CURRENCY_INFO } from "@/types/expense";
 
 /**
  * Format a number as currency with proper locale formatting
@@ -8,10 +9,10 @@ import { CurrencyCode, CURRENCY_INFO } from '@/types/expense';
  */
 export function formatCurrency(amount: number, currency: CurrencyCode): string {
   // Use Spanish (Argentina) locale for ARS, Spanish (Mexico) for USD
-  const locale = currency === 'ARS' ? 'es-AR' : 'es-MX';
+  const locale = currency === "ARS" ? "es-AR" : "es-MX";
 
   const formatted = new Intl.NumberFormat(locale, {
-    style: 'currency',
+    style: "currency",
     currency: currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -32,7 +33,7 @@ export function formatCurrencyShort(
   currency: CurrencyCode
 ): string {
   const symbol = CURRENCY_INFO[currency].symbol;
-  const formattedAmount = amount.toLocaleString('es-AR', {
+  const formattedAmount = amount.toLocaleString("es-AR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -50,28 +51,28 @@ export function parseCurrencyFromText(text: string): CurrencyCode | null {
 
   // Check for explicit USD mentions
   if (
-    lowerText.includes('usd') ||
-    lowerText.includes('dólar') ||
-    lowerText.includes('dolar') ||
-    lowerText.includes('dólares') ||
-    lowerText.includes('dolares') ||
-    lowerText.includes('dollar') ||
-    lowerText.includes('dollars') ||
+    lowerText.includes("usd") ||
+    lowerText.includes("dólar") ||
+    lowerText.includes("dolar") ||
+    lowerText.includes("dólares") ||
+    lowerText.includes("dolares") ||
+    lowerText.includes("dollar") ||
+    lowerText.includes("dollars") ||
     lowerText.match(/\bUS\$/i)
   ) {
-    return 'USD';
+    return "USD";
   }
 
   // Check for explicit ARS mentions
   if (
-    lowerText.includes('ars') ||
-    lowerText.includes('peso') ||
-    lowerText.includes('pesos') ||
+    lowerText.includes("ars") ||
+    lowerText.includes("peso") ||
+    lowerText.includes("pesos") ||
     lowerText.match(/\bpeso argentino/i) ||
     lowerText.match(/\bpesos argentinos/i) ||
     lowerText.match(/\$\s*arg/i)
   ) {
-    return 'ARS';
+    return "ARS";
   }
 
   // No explicit currency found
@@ -113,7 +114,7 @@ export function getCurrencyFlag(currency: CurrencyCode): string {
  */
 export function extractAmountFromText(text: string): number | null {
   // Remove currency symbols and text, keep only numbers, dots, and commas
-  const cleaned = text.replace(/[^\d.,]/g, '');
+  const cleaned = text.replace(/[^\d.,]/g, "");
 
   // Try to parse as number
   // Handle both formats: 1,234.56 (US) and 1.234,56 (AR)
@@ -121,15 +122,15 @@ export function extractAmountFromText(text: string): number | null {
 
   // Check if it's US format (comma as thousands, dot as decimal)
   if (/^\d{1,3}(,\d{3})*(\.\d{2})?$/.test(cleaned)) {
-    amount = parseFloat(cleaned.replace(/,/g, ''));
+    amount = parseFloat(cleaned.replace(/,/g, ""));
   }
   // Check if it's AR format (dot as thousands, comma as decimal)
   else if (/^\d{1,3}(\.\d{3})*(,\d{2})?$/.test(cleaned)) {
-    amount = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+    amount = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
   }
   // Try simple parse
   else {
-    const parsed = parseFloat(cleaned.replace(',', '.'));
+    const parsed = parseFloat(cleaned.replace(",", "."));
     if (!isNaN(parsed)) {
       amount = parsed;
     }
@@ -144,5 +145,5 @@ export function extractAmountFromText(text: string): number | null {
  * @returns true if valid currency code
  */
 export function isValidCurrency(code: string): code is CurrencyCode {
-  return code === 'USD' || code === 'ARS';
+  return code === "USD" || code === "ARS";
 }

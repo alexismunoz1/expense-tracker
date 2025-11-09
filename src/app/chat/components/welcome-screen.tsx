@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { Flex, Heading, Text, Button } from "@radix-ui/themes";
 import {
   QuestionMarkCircledIcon,
   PlusIcon,
@@ -7,6 +6,7 @@ import {
   CameraIcon,
   ImageIcon,
 } from "@radix-ui/react-icons";
+import { Flex, Heading, Text, Button } from "@radix-ui/themes";
 import type { SendMessageParams } from "../types";
 
 const CONTAINER_STYLE = { minHeight: "300px" } as const;
@@ -58,7 +58,9 @@ export const WelcomeScreen = memo(function WelcomeScreen({
       <Flex gap="3" wrap="wrap" justify="center" style={ACTIONS_STYLE}>
         <Button
           variant="surface"
-          onClick={() => onSendMessage({ text: "Deseo agregar un gasto nuevo" })}
+          onClick={() =>
+            onSendMessage({ text: "Deseo agregar un gasto nuevo" })
+          }
         >
           <PlusIcon />
           Agregar gasto

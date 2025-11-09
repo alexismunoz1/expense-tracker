@@ -7,7 +7,6 @@ import {
   WelcomeScreen,
   ChatMessageList,
   ChatErrorDisplay,
-  ChatLoadingState,
   ImagePreview,
   ChatInputArea,
 } from "./components";
@@ -24,18 +23,15 @@ const CONTAINER_STYLE = {
 const MESSAGES_AREA_STYLE = {
   overflowY: "auto" as const,
   background: "var(--gray-3)",
+  minHeight: 0,
+  flex: "1 1 0",
 };
 
 export default function Page() {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, error, stop } = useChatMessages();
-  const {
-    files,
-    fileInputRef,
-    cameraInputRef,
-    clearFiles,
-    handleFileChange,
-  } = useFileUpload();
+  const { files, fileInputRef, cameraInputRef, clearFiles, handleFileChange } =
+    useFileUpload();
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -87,7 +83,7 @@ export default function Page() {
     <Flex direction="column" style={CONTAINER_STYLE}>
       <ChatHeader />
 
-      <Box flexGrow="1" p="4" style={MESSAGES_AREA_STYLE}>
+      <Box p="4" style={MESSAGES_AREA_STYLE}>
         {messages.length === 0 ? (
           <WelcomeScreen
             onSendMessage={handleSendMessage}
@@ -95,13 +91,11 @@ export default function Page() {
             onGalleryClick={handleGalleryClick}
           />
         ) : (
-          <ChatMessageList messages={messages} />
+          <ChatMessageList messages={messages} status={status} />
         )}
       </Box>
 
       <ChatErrorDisplay error={error} />
-
-      <ChatLoadingState status={status} />
 
       {files && <ImagePreview files={files} onClear={clearFiles} />}
 

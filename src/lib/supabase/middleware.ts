@@ -1,10 +1,10 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
   const supabaseResponse = NextResponse.next({
     request,
-  })
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,17 +12,17 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            supabaseResponse.cookies.set(name, value, options)
-          })
+            request.cookies.set(name, value);
+            supabaseResponse.cookies.set(name, value, options);
+          });
         },
       },
     }
-  )
+  );
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
@@ -30,47 +30,47 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   // Protect routes that require authentication
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/_next') &&
-    !request.nextUrl.pathname.startsWith('/api/auth') &&
-    request.nextUrl.pathname !== '/' &&
-    request.nextUrl.pathname !== '/onboarding'
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/_next") &&
+    !request.nextUrl.pathname.startsWith("/api/auth") &&
+    request.nextUrl.pathname !== "/" &&
+    request.nextUrl.pathname !== "/onboarding"
   ) {
     // Redirect to sign-in page if not authenticated
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/signin'
-    url.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/signin";
+    url.searchParams.set("redirectTo", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
   // Check if authenticated user needs onboarding
   // Only check for protected routes (not auth pages or static assets)
   if (
     user &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/_next') &&
-    !request.nextUrl.pathname.startsWith('/api') &&
-    request.nextUrl.pathname !== '/' &&
-    request.nextUrl.pathname !== '/onboarding'
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/_next") &&
+    !request.nextUrl.pathname.startsWith("/api") &&
+    request.nextUrl.pathname !== "/" &&
+    request.nextUrl.pathname !== "/onboarding"
   ) {
     // Check if user has completed onboarding (has user_profile)
     const { data: profileData, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .single()
+      .from("user_profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .single();
 
     // If no profile exists and not already on onboarding page, redirect to onboarding
-    if (profileError?.code === 'PGRST116' || !profileData) {
-      console.log('👤 User needs onboarding, redirecting...')
-      const url = request.nextUrl.clone()
-      url.pathname = '/onboarding'
-      return NextResponse.redirect(url)
+    if (profileError?.code === "PGRST116" || !profileData) {
+      console.log("👤 User needs onboarding, redirecting...");
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
     }
   }
 
@@ -87,5 +87,5 @@ export async function updateSession(request: NextRequest) {
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely.
 
-  return supabaseResponse
+  return supabaseResponse;
 }

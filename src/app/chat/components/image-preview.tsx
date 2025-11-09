@@ -1,6 +1,6 @@
 import { memo } from "react";
-import { Box, Flex, Text, IconButton, Card } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
+import { Box, Flex, Text, IconButton, Card } from "@radix-ui/themes";
 
 const CONTAINER_STYLE = {
   background: "var(--gray-2)",
@@ -51,7 +51,10 @@ export const ImagePreview = memo(function ImagePreview({
         </Flex>
         <Flex gap="2" wrap="wrap">
           {Array.from(files).map((file, index) => (
-            <Card key={`${file.name}-${file.size}-${index}`} style={{ padding: "8px" }}>
+            <Card
+              key={`${file.name}-${file.size}-${index}`}
+              style={{ padding: "8px" }}
+            >
               <Flex direction="column" gap="2" align="center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

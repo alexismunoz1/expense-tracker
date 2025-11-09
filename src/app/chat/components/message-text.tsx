@@ -1,12 +1,11 @@
 import { memo, useMemo } from "react";
+import { Box, Flex, Spinner, Text } from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Box, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
-import { getMessageText } from "../utils";
-import type { Message, ExpenseListData } from "../types";
 import styles from "../chat.module.css";
-import ExpenseList from "./expense-list";
+import { getMessageText } from "../utils";
+import { ExpenseList } from "./expense-list";
+import type { Message, ExpenseListData } from "../types";
 
 interface MessageTextProps {
   message: Message;
@@ -16,7 +15,9 @@ interface MessageTextProps {
  * Parses message content to extract expense list JSON blocks
  * Returns array of content segments (text or expense data)
  */
-function parseMessageContent(text: string): Array<
+function parseMessageContent(
+  text: string
+): Array<
   | { type: "text"; content: string }
   | { type: "expense-list"; data: ExpenseListData["data"] }
   | { type: "loading-expense-list" }
@@ -124,7 +125,7 @@ export const MessageText = memo(function MessageText({
 
         if (segment.type === "loading-expense-list") {
           return (
-            <Flex key={index} gap="2" align="center" py="2">
+            <Flex key={index} gap="2" align="center" pt="2">
               <Spinner size="2" />
               <Text size="2" color="gray">
                 Cargando lista de gastos...
