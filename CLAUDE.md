@@ -28,6 +28,7 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 - Each component in its own directory
 - UI components must be agnostic (no business logic)
 - Use `import type` for type-only imports
+- **Hardcoded values must be constants in `src/constants/`**
 
 ## Tech Stack
 
@@ -91,6 +92,15 @@ DO NOT include AI attribution signatures. Keep commits clean and professional.
 - `src/types/expense.ts` - Expense, Category, UserProfile, CurrencyCode, CURRENCY_INFO
 - `src/types/tools.ts` - Tool inputs, OcrResult, isDescriptionUnclear()
 - `src/app/chat/types/chat.types.ts` - Message, MessagePart, ChatStatus
+
+### Constants
+
+- `src/constants/routes.ts` - Application routes, route prefixes, public/protected routes
+- `src/constants/http-status.ts` - HTTP status codes
+- `src/constants/api.ts` - AI config, tool names, defaults, OCR config, file limits
+- `src/constants/database.ts` - Supabase error codes
+- `src/constants/validation.ts` - Validation rules, thresholds, limits
+- `src/constants/categories.ts` - Category detection keywords
 
 ### Utilities
 

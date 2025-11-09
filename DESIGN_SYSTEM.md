@@ -224,6 +224,89 @@ import type { MyComponentProps } from "./my-component.types";
 import { memo } from "react";
 ```
 
+### 11. Valores hardcodeados deben estar como constantes
+
+Todos los valores hardcodeados (strings, números mágicos, rutas, códigos de estado, etc.) deben estar centralizados en el directorio `src/constants/`.
+
+**Estructura de constantes:**
+
+```
+src/constants/
+├── routes.ts         # Rutas de la aplicación
+├── http-status.ts    # Códigos de estado HTTP
+├── api.ts            # Configuración de AI/API
+├── database.ts       # Códigos de error de base de datos
+├── validation.ts     # Reglas de validación y thresholds
+├── categories.ts     # Keywords para categorización
+└── index.ts          # Barrel export
+```
+
+❌ **Incorrecto:**
+
+```tsx
+// Hardcoded strings y magic numbers
+export const UserProfile = memo(function UserProfile() {
+  const navigate = useNavigate();
+
+  if (!user) {
+    navigate("/auth/signin"); // ❌ Ruta hardcodeada
+    return null;
+  }
+
+  if (response.status === 401) {
+    // ❌ Status code hardcodeado
+    // ...
+  }
+
+  if (amount > 1000000) {
+    // ❌ Magic number
+    // ...
+  }
+});
+```
+
+✅ **Correcto:**
+
+```tsx
+import { ROUTES, HTTP_STATUS, EXPENSE_VALIDATION } from "@/constants";
+
+export const UserProfile = memo(function UserProfile() {
+  const navigate = useNavigate();
+
+  if (!user) {
+    navigate(ROUTES.AUTH_SIGNIN); // ✅ Constante
+    return null;
+  }
+
+  if (response.status === HTTP_STATUS.UNAUTHORIZED) {
+    // ✅ Constante
+    // ...
+  }
+
+  if (amount > EXPENSE_VALIDATION.MAX_AMOUNT) {
+    // ✅ Constante
+    // ...
+  }
+});
+```
+
+**Beneficios:**
+
+- **Mantenibilidad:** Cambios centralizados
+- **Consistencia:** Valores únicos en toda la app
+- **Type Safety:** TypeScript infiere tipos automáticamente
+- **Documentación:** Los nombres de constantes son autodocumentados
+- **Refactoring:** Búsqueda y reemplazo más seguro
+
+**Categorías de constantes:**
+
+1. **Rutas:** `ROUTES`, `ROUTE_PREFIXES`, `PUBLIC_ROUTES`
+2. **HTTP:** `HTTP_STATUS`
+3. **API/AI:** `AI_CONFIG`, `AI_TOOLS`, `DEFAULT_CATEGORIES`, `OCR_CONFIG`
+4. **Database:** `SUPABASE_ERRORS`
+5. **Validación:** `EXPENSE_VALIDATION`, `OCR_THRESHOLDS`, `FILE_VALIDATION`
+6. **Categorización:** `CATEGORY_KEYWORDS`, `FOOD_KEYWORDS`, etc.
+
 ## Estructura de Archivos Recomendada
 
 ```
@@ -239,6 +322,14 @@ src/
 ├── components/              # Componentes compartidos
 │   ├── auth-button/
 │   └── ...
+├── constants/               # Constantes centralizadas
+│   ├── routes.ts
+│   ├── http-status.ts
+│   ├── api.ts
+│   ├── database.ts
+│   ├── validation.ts
+│   ├── categories.ts
+│   └── index.ts
 ├── hooks/                   # Hooks globales
 ├── types/                   # Tipos globales
 └── utils/                   # Utilidades globales
@@ -399,7 +490,8 @@ Al agregar nuevos componentes:
 4. Crear archivo `component-name.module.css` (si tiene estilos complejos)
 5. Crear `index.ts` con barrel exports
 6. Seguir todas las reglas de este documento
-7. Ejecutar `yarn lint:fix` antes de commit
+7. **Extraer valores hardcodeados a `src/constants/`**
+8. Ejecutar `yarn lint:fix` antes de commit
 
 ---
 

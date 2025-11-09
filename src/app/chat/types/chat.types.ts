@@ -2,6 +2,8 @@
  * Chat types for AI-powered expense tracking assistant
  */
 
+import type { CurrencyCode } from "@/types/expense";
+
 /**
  * Chat status indicates the current state of the chat interaction
  */
@@ -73,7 +75,7 @@ export interface ExpenseItemDisplay {
   id: string;
   titulo: string;
   precio: number;
-  currency: string; // 'USD' or 'ARS'
+  currency: CurrencyCode;
   categoria: string;
   categoriaIcono?: string;
   categoriaColor?: string;

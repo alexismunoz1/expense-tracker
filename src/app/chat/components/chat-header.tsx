@@ -3,8 +3,7 @@ import { Box, Flex } from "@radix-ui/themes";
 import { AuthButton } from "@/components/auth-button";
 
 const HEADER_STYLE = {
-  background: "var(--accent-9)",
-  borderBottom: "1px solid var(--gray-6)",
+  background: "transparent",
 } as const;
 
 /**
