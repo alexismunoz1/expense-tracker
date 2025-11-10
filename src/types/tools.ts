@@ -3,7 +3,12 @@ import type { Expense, Category } from "./expense";
 // === CONSTANTES DE ACCIONES ===
 
 // Acciones disponibles para gestión de gastos
-export const GASTO_ACCIONES = ["crear", "obtener", "modificar"] as const;
+export const GASTO_ACCIONES = [
+  "crear",
+  "obtener",
+  "modificar",
+  "eliminar",
+] as const;
 
 // Acciones disponibles para gestión de categorías
 export const CATEGORIA_ACCIONES = ["crear", "obtener"] as const;
@@ -25,6 +30,7 @@ export interface FiltrosGasto {
 // Datos para operaciones de gastos
 export interface DatosGasto {
   id?: string;
+  ids?: string[]; // Para eliminación batch
   titulo?: string;
   precio?: number;
   divisa?: string;
@@ -132,6 +138,9 @@ export const CAMPOS_REQUERIDOS_CREAR_CATEGORIA = [
 // Campos requeridos para modificar un gasto
 export const CAMPOS_REQUERIDOS_MODIFICAR_GASTO = ["id"] as const;
 
+// Campos requeridos para eliminar gastos
+export const CAMPOS_REQUERIDOS_ELIMINAR_GASTO = ["ids"] as const;
+
 // === TIPOS PARA FUNCIONES INDIVIDUALES ===
 
 // Input para guardar gasto individual
@@ -190,4 +199,15 @@ export interface ModificarGastoResponse extends BaseResponse {
   expense?: Expense;
   originalExpense?: Expense;
   updatedExpense?: Expense;
+}
+
+// Input para eliminar gastos
+export interface EliminarGastoInput {
+  ids: string[];
+}
+
+// Respuesta para eliminar gastos
+export interface EliminarGastoResponse extends BaseResponse {
+  deletedExpenses?: Expense[];
+  count?: number;
 }

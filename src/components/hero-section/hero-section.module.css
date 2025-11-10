@@ -1,0 +1,40 @@
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hero {
+  animation: fadeIn 0.6s ease-in;
+  max-width: 800px;
+  width: 100%;
+}
+
+.title {
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.subtitle {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta {
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .title {
+    max-width: 100%;
+  }
+
+  .subtitle {
+    max-width: 100%;
+  }
+}

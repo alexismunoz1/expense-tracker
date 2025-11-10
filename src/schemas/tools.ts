@@ -13,6 +13,10 @@ export const gestionarGastoSchema = z.object({
         .string()
         .optional()
         .describe("ID del gasto (requerido para modificar)"),
+      ids: z
+        .array(z.string())
+        .optional()
+        .describe("Array de IDs de gastos (requerido para eliminar)"),
       titulo: z.string().optional().describe("Título o descripción del gasto"),
       precio: z.number().optional().describe("Precio del gasto en números"),
       divisa: z
@@ -143,6 +147,14 @@ export const crearCategoriaSchema = z.object({
 // Schema para obtener categorías - sin parámetros
 export const obtenerCategoriasSchema = z.object({});
 
+// Schema para eliminar gastos - batch delete support
+export const eliminarGastoSchema = z.object({
+  ids: z
+    .array(z.string())
+    .min(1, "Se requiere al menos un ID para eliminar")
+    .describe("Array de IDs de gastos a eliminar"),
+});
+
 // === TIPOS TYPESCRIPT (Individuales) ===
 export type GuardarGastoIndividualInput = z.infer<typeof guardarGastoSchema>;
 export type ObtenerGastosIndividualInput = z.infer<typeof obtenerGastosSchema>;
@@ -155,3 +167,4 @@ export type CrearCategoriaIndividualInput = z.infer<
 export type ObtenerCategoriasIndividualInput = z.infer<
   typeof obtenerCategoriasSchema
 >;
+export type EliminarGastoIndividualInput = z.infer<typeof eliminarGastoSchema>;

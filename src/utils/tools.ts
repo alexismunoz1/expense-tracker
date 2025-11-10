@@ -15,6 +15,8 @@ import type {
   CrearCategoriaResponse,
   ObtenerCategoriasResponse,
   ModificarGastoResponse,
+  EliminarGastoInput,
+  EliminarGastoResponse,
   OcrResult,
   ExtractedOcrData,
 } from "@/types/tools";
@@ -24,6 +26,7 @@ import {
   CAMPOS_REQUERIDOS_CREAR_GASTO,
   CAMPOS_REQUERIDOS_CREAR_CATEGORIA,
   CAMPOS_REQUERIDOS_MODIFICAR_GASTO,
+  CAMPOS_REQUERIDOS_ELIMINAR_GASTO,
   GASTO_ACCIONES,
   CATEGORIA_ACCIONES,
 } from "@/types/tools";
@@ -35,6 +38,7 @@ import {
   getCategories,
   updateExpense,
   getExpenseById,
+  deleteExpenses,
 } from "./expenses";
 import { getUserProfile } from "./user-profile";
 
@@ -116,10 +120,21 @@ export const executeGestionarGasto = async (
           categoria: datos.categoria,
         });
 
+      case "eliminar":
+        if (!datos.ids || datos.ids.length === 0) {
+          return {
+            success: false,
+            message:
+              "Para eliminar gastos necesitas proporcionar al menos un ID",
+          };
+        }
+        return await executeEliminarGasto({ ids: datos.ids });
+
       default:
         return {
           success: false,
-          message: "Acción no válida. Usa: crear, obtener, o modificar",
+          message:
+            "Acción no válida. Usa: crear, obtener, modificar, o eliminar",
         };
     }
   } catch (error) {
@@ -384,6 +399,86 @@ export const executeModificarGasto = async ({
     return {
       success: false,
       message: "Error al actualizar el gasto",
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+};
+
+// Función para eliminar gastos (batch delete support)
+export const executeEliminarGasto = async ({
+  ids,
+}: EliminarGastoInput): Promise<EliminarGastoResponse> => {
+  try {
+    // Validar que se proporciona al menos un ID
+    if (!ids || ids.length === 0) {
+      return {
+        success: false,
+        message: `Campo requerido faltante: ${CAMPOS_REQUERIDOS_ELIMINAR_GASTO.join(", ")}`,
+      };
+    }
+
+    // Obtener los gastos antes de eliminarlos para mostrar información completa
+    const expensesToDelete: Expense[] = [];
+    for (const id of ids) {
+      const expense = await getExpenseById(id);
+      if (expense) {
+        expensesToDelete.push(expense);
+      }
+    }
+
+    // Verificar que se encontraron gastos
+    if (expensesToDelete.length === 0) {
+      return {
+        success: false,
+        message: `No se encontraron gastos con los IDs proporcionados`,
+      };
+    }
+
+    // Eliminar los gastos
+    const deletedExpenses = await deleteExpenses(ids);
+
+    // Verificar que se eliminaron todos
+    if (deletedExpenses.length === 0) {
+      return {
+        success: false,
+        message:
+          "No se pudieron eliminar los gastos. Verifica que tengas permiso para eliminarlos.",
+      };
+    }
+
+    // Enriquecer con información de categoría
+    const categories = await getCategories();
+    const enrichedExpenses = deletedExpenses.map((expense) => {
+      const categoryData = categories.find(
+        (cat) => cat.id === expense.categoria
+      );
+      return {
+        ...expense,
+        categoryIcon: categoryData?.icono,
+        categoryColor: categoryData?.color,
+      };
+    });
+
+    const totalDeleted = deletedExpenses.reduce(
+      (sum, expense) => sum + expense.precio,
+      0
+    );
+
+    const message =
+      deletedExpenses.length === 1
+        ? `Gasto "${deletedExpenses[0].titulo}" eliminado exitosamente`
+        : `${deletedExpenses.length} gastos eliminados exitosamente (Total: ${formatCurrency(totalDeleted, deletedExpenses[0].currency)})`;
+
+    return {
+      success: true,
+      message,
+      deletedExpenses: enrichedExpenses as Expense[],
+      count: deletedExpenses.length,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Error al eliminar los gastos",
       error: error instanceof Error ? error.message : "Error desconocido",
     };
   }

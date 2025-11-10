@@ -101,3 +101,33 @@ export interface ExpenseCreatedData {
   type: "expense-created";
   data: ExpenseItemDisplay;
 }
+
+/**
+ * File metadata for tracking compression and display info
+ */
+export interface FileMetadata {
+  file: File;
+  size: number; // Size in bytes after compression
+  isCompressing: boolean;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+/**
+ * Props for ImageSkeleton component
+ */
+export interface ImageSkeletonProps {
+  size?: "small" | "medium";
+}
+
+/**
+ * Props for ImageModal component
+ */
+export interface ImageModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  imageUrl: string;
+  filename?: string;
+}

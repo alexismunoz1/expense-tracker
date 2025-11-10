@@ -129,11 +129,11 @@ Por favor, intenta nuevamente o registra el gasto manualmente proporcionando los
         let systemPrompt = `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
 
 **HERRAMIENTAS DISPONIBLES:**
-• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
+• gestionarGasto: crear/obtener/modificar/eliminar gastos (accion: 'crear'|'obtener'|'modificar'|'eliminar')
 • gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')
 
 **IMPORTANTE - USO DE HERRAMIENTAS:**
-- Cuando el usuario pida crear, modificar u obtener gastos/categorías, ejecuta la herramienta correspondiente INMEDIATAMENTE
+- Cuando el usuario pida crear, modificar, obtener o eliminar gastos/categorías, ejecuta la herramienta correspondiente INMEDIATAMENTE
 - NO generes texto de confirmación ANTES de usar la herramienta (ej: "¡Entendido! Voy a registrar...")
 - SOLO responde DESPUÉS de que la herramienta se haya ejecutado, mostrando los resultados
 - NUNCA muestres el ID del gasto al usuario en respuestas individuales
@@ -217,7 +217,42 @@ Cuando crees un gasto individual, usa SIEMPRE el formato JSON estructurado con m
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
 - En el JSON, mantén el formato ISO 8601
 - El componente visual se encargará de formatearlas en español
-- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real`;
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real
+
+**FLUJO DE ELIMINACIÓN DE GASTOS (CONFIRMACIÓN OBLIGATORIA):**
+Cuando el usuario solicite eliminar uno o más gastos, sigue este flujo ESTRICTAMENTE:
+
+1. **IDENTIFICAR GASTOS:**
+   - Llama a gestionarGasto con accion: "obtener" (con filtros si necesario) para encontrar el/los gasto(s)
+   - Si el usuario dice "elimina mi gasto de gimnasio", busca por título
+   - Si el usuario dice "elimina todos mis gastos de comida", filtra por categoría
+   - Si el usuario dice "elimina mi último gasto", obtén todos y selecciona el más reciente
+
+2. **MOSTRAR Y CONFIRMAR:**
+   - Muestra los detalles completos de los gastos a eliminar (título, monto, categoría)
+   - Pregunta EXPLÍCITAMENTE: "¿Confirmas que quieres eliminar este/estos gasto(s)?"
+   - NO elimines hasta recibir confirmación explícita del usuario ("sí", "confirmo", "elimínalo", etc.)
+
+3. **EJECUTAR ELIMINACIÓN:**
+   - Solo después de confirmación, llama a gestionarGasto con accion: "eliminar" y datos.ids: [array de IDs]
+   - Para un solo gasto: datos.ids: ["abc123"]
+   - Para múltiples: datos.ids: ["abc123", "def456", "ghi789"]
+
+4. **FORMATO DE RESPUESTA:**
+   - Muestra confirmación simple en texto: "✅ Gasto [título] eliminado exitosamente"
+   - Para batch: "✅ [N] gastos eliminados exitosamente"
+   - NO uses JSON estructurado para mostrar gastos eliminados (solo texto descriptivo)
+
+**EJEMPLOS DE FLUJO:**
+Usuario: "elimina mi gasto de gimnasio"
+Asistente: [Busca gastos] "Encontré este gasto: Gimnasio - $25,000 ARS (categoría: salud). ¿Confirmas que quieres eliminarlo?"
+Usuario: "sí"
+Asistente: [Ejecuta eliminación] "✅ Gasto Gimnasio eliminado exitosamente"
+
+Usuario: "elimina todos mis gastos de comida"
+Asistente: [Busca gastos] "Encontré 3 gastos de comida por un total de $15,000 ARS: Pizza ($5,000), Supermercado ($7,000), Restaurante ($3,000). ¿Confirmas que quieres eliminarlos?"
+Usuario: "confirmo"
+Asistente: [Ejecuta eliminación] "✅ 3 gastos eliminados exitosamente (Total: $15,000 ARS)"`;
 
         // Si se requiere clarificación, agregar instrucciones especiales
         if (
@@ -266,7 +301,7 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
           tools: {
             gestionarGasto: tool({
               description:
-                "Gestiona gastos (crear nuevos, obtener lista, modificar existentes). Incluye filtros avanzados para consultas específicas.",
+                "Gestiona gastos (crear nuevos, obtener lista, modificar existentes, eliminar). Incluye filtros avanzados para consultas específicas y soporte para eliminación batch.",
               inputSchema: gestionarGastoSchema,
               execute: async (input) => executeGestionarGasto(input, userId),
             }),
@@ -292,12 +327,12 @@ Ejemplo de respuesta esperada del usuario: "Supermercado Central" o "Farmacia de
       system: `Eres un asistente de gastos personal. Usa formato Markdown para respuestas.
 
 **HERRAMIENTAS DISPONIBLES:**
-• gestionarGasto: crear/obtener/modificar gastos (accion: 'crear'|'obtener'|'modificar')
+• gestionarGasto: crear/obtener/modificar/eliminar gastos (accion: 'crear'|'obtener'|'modificar'|'eliminar')
 • gestionarCategoria: crear/obtener categorías (accion: 'crear'|'obtener')
 • procesarImagenRecibo: analizar fotos de recibos con IA para extraer datos y crear gastos automáticamente
 
 **IMPORTANTE - USO DE HERRAMIENTAS:**
-- Cuando el usuario pida crear, modificar u obtener gastos/categorías, ejecuta la herramienta correspondiente INMEDIATAMENTE
+- Cuando el usuario pida crear, modificar, obtener o eliminar gastos/categorías, ejecuta la herramienta correspondiente INMEDIATAMENTE
 - NO generes texto de confirmación ANTES de usar la herramienta (ej: "¡Entendido! Voy a registrar...")
 - SOLO responde DESPUÉS de que la herramienta se haya ejecutado, mostrando los resultados
 - Cuando el usuario envíe una imagen de recibo, factura o ticket, usa automáticamente la herramienta 'procesarImagenRecibo' para analizarla y crear el gasto
@@ -392,12 +427,47 @@ Cuando crees un gasto individual, usa SIEMPRE el formato JSON estructurado con m
 - Las fechas vienen en formato ISO 8601 (ej: "2025-11-06T20:05:18.599Z")
 - En el JSON, mantén el formato ISO 8601
 - El componente visual se encargará de formatearlas en español
-- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real`,
+- NUNCA uses placeholder como "[Fecha actual]" - SIEMPRE usa la fecha real
+
+**FLUJO DE ELIMINACIÓN DE GASTOS (CONFIRMACIÓN OBLIGATORIA):**
+Cuando el usuario solicite eliminar uno o más gastos, sigue este flujo ESTRICTAMENTE:
+
+1. **IDENTIFICAR GASTOS:**
+   - Llama a gestionarGasto con accion: "obtener" (con filtros si necesario) para encontrar el/los gasto(s)
+   - Si el usuario dice "elimina mi gasto de gimnasio", busca por título
+   - Si el usuario dice "elimina todos mis gastos de comida", filtra por categoría
+   - Si el usuario dice "elimina mi último gasto", obtén todos y selecciona el más reciente
+
+2. **MOSTRAR Y CONFIRMAR:**
+   - Muestra los detalles completos de los gastos a eliminar (título, monto, categoría)
+   - Pregunta EXPLÍCITAMENTE: "¿Confirmas que quieres eliminar este/estos gasto(s)?"
+   - NO elimines hasta recibir confirmación explícita del usuario ("sí", "confirmo", "elimínalo", etc.)
+
+3. **EJECUTAR ELIMINACIÓN:**
+   - Solo después de confirmación, llama a gestionarGasto con accion: "eliminar" y datos.ids: [array de IDs]
+   - Para un solo gasto: datos.ids: ["abc123"]
+   - Para múltiples: datos.ids: ["abc123", "def456", "ghi789"]
+
+4. **FORMATO DE RESPUESTA:**
+   - Muestra confirmación simple en texto: "✅ Gasto [título] eliminado exitosamente"
+   - Para batch: "✅ [N] gastos eliminados exitosamente"
+   - NO uses JSON estructurado para mostrar gastos eliminados (solo texto descriptivo)
+
+**EJEMPLOS DE FLUJO:**
+Usuario: "elimina mi gasto de gimnasio"
+Asistente: [Busca gastos] "Encontré este gasto: Gimnasio - $25,000 ARS (categoría: salud). ¿Confirmas que quieres eliminarlo?"
+Usuario: "sí"
+Asistente: [Ejecuta eliminación] "✅ Gasto Gimnasio eliminado exitosamente"
+
+Usuario: "elimina todos mis gastos de comida"
+Asistente: [Busca gastos] "Encontré 3 gastos de comida por un total de $15,000 ARS: Pizza ($5,000), Supermercado ($7,000), Restaurante ($3,000). ¿Confirmas que quieres eliminarlos?"
+Usuario: "confirmo"
+Asistente: [Ejecuta eliminación] "✅ 3 gastos eliminados exitosamente (Total: $15,000 ARS)"`,
       messages: convertToModelMessages(messagesWithoutImages),
       tools: {
         gestionarGasto: tool({
           description:
-            "Gestiona gastos (crear nuevos, obtener lista, modificar existentes). Incluye filtros avanzados para consultas específicas.",
+            "Gestiona gastos (crear nuevos, obtener lista, modificar existentes, eliminar). Incluye filtros avanzados para consultas específicas y soporte para eliminación batch.",
           inputSchema: gestionarGastoSchema,
           execute: async (input) => executeGestionarGasto(input, userId),
         }),

@@ -1,6 +1,8 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { Box, Flex, Text, IconButton, Card } from "@radix-ui/themes";
+import { ImageSkeleton } from "./image-skeleton";
+import type { FileMetadata } from "../types/chat.types";
 
 const CONTAINER_STYLE = {
   background: "var(--gray-2)",
@@ -23,17 +25,45 @@ const FILENAME_STYLE = {
 interface ImagePreviewProps {
   files: FileList;
   onClear: () => void;
+  fileMetadata: FileMetadata[];
 }
 
 /**
+ * Format bytes to human-readable size
+ */
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+/**
  * Preview component for selected images before sending
- * Shows thumbnails with filenames and a clear button
+ * Shows thumbnails with filenames, file size, and loading states
  * Memoized to prevent unnecessary re-renders
  */
 export const ImagePreview = memo(function ImagePreview({
   files,
   onClear,
+  fileMetadata,
 }: ImagePreviewProps) {
+  const [objectUrls, setObjectUrls] = useState<string[]>([]);
+
+  // Create and cleanup object URLs
+  useEffect(() => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const urls = Array.from(files).map((file) => URL.createObjectURL(file));
+    setObjectUrls(urls);
+
+    // Cleanup on unmount
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
   if (!files || files.length === 0) {
     return null;
   }
@@ -50,24 +80,39 @@ export const ImagePreview = memo(function ImagePreview({
           </IconButton>
         </Flex>
         <Flex gap="2" wrap="wrap">
-          {Array.from(files).map((file, index) => (
-            <Card
-              key={`${file.name}-${file.size}-${index}`}
-              style={{ padding: "8px" }}
-            >
-              <Flex direction="column" gap="2" align="center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  style={PREVIEW_STYLE}
-                />
-                <Text size="1" style={FILENAME_STYLE}>
-                  {file.name}
-                </Text>
-              </Flex>
-            </Card>
-          ))}
+          {Array.from(files).map((file, index) => {
+            const metadata = fileMetadata[index];
+            const isCompressing = metadata?.isCompressing ?? false;
+            const fileSize = metadata?.size ?? file.size;
+
+            return (
+              <Card
+                key={`${file.name}-${file.size}-${index}`}
+                style={{ padding: "8px" }}
+              >
+                <Flex direction="column" gap="2" align="center">
+                  {isCompressing ? (
+                    <ImageSkeleton size="small" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={objectUrls[index]}
+                      alt={file.name}
+                      style={PREVIEW_STYLE}
+                    />
+                  )}
+                  <Flex direction="column" gap="1" align="center">
+                    <Text size="1" style={FILENAME_STYLE}>
+                      {file.name}
+                    </Text>
+                    <Text size="1" color="gray">
+                      {formatFileSize(fileSize)}
+                    </Text>
+                  </Flex>
+                </Flex>
+              </Card>
+            );
+          })}
         </Flex>
       </Flex>
     </Box>

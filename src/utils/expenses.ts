@@ -228,3 +228,31 @@ export const saveCategory = async (category: Category): Promise<void> => {
     throw new Error("Error al guardar la categoría");
   }
 };
+
+/**
+ * Delete expenses by IDs (batch delete support)
+ * RLS ensures only the owner can delete their own expenses
+ * Returns the deleted expenses or empty array if not found/unauthorized
+ */
+export const deleteExpenses = async (ids: string[]): Promise<Expense[]> => {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("expenses")
+      .delete()
+      .in("id", ids)
+      .select();
+
+    if (error) {
+      console.error("Supabase error deleting expenses:", error);
+      throw new Error("Error al eliminar los gastos");
+    }
+
+    // Return deleted expenses (RLS will have filtered out unauthorized ones)
+    return data || [];
+  } catch (error) {
+    console.error("Error deleting expenses:", error);
+    throw new Error("Error al eliminar los gastos");
+  }
+};

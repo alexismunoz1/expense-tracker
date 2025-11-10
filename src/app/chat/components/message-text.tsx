@@ -41,7 +41,7 @@ function parseMessageContent(
   const incompleteExpenseListRegex = /:::expense-list-json\s*\n([\s\S]*?)$/;
   // Match incomplete expense created JSON blocks (streaming)
   const incompleteExpenseCreatedRegex =
-    /^:::expense-created-json\s*\n([\s\S]*?)$/;
+    /:::expense-created-json\s*\n([\s\S]*?)$/;
 
   // Collect all matches with their positions
   const matches: Array<{

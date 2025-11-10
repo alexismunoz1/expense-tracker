@@ -54,8 +54,22 @@ export const OCR_CONFIG = {
 
 /**
  * File upload limits
+ * MAX_SIZE_BYTES: Maximum uncompressed file size (5MB)
+ * COMPRESSION_QUALITY: JPEG compression quality (0.8 = 80%)
+ * TARGET_COMPRESSED_SIZE: Target size after compression to stay under Vercel's 4.5MB limit
  */
 export const FILE_LIMITS = {
-  MAX_SIZE_BYTES: 5 * 1024 * 1024, // 5MB
-  COMPRESSION_QUALITY: 0.8,
+  MAX_SIZE_BYTES: 5 * 1024 * 1024, // 5MB (uncompressed)
+  COMPRESSION_QUALITY: 0.8, // 80% quality
+  TARGET_COMPRESSED_SIZE: 3 * 1024 * 1024, // 3MB (leaves room for base64 overhead)
+} as const;
+
+/**
+ * Image display sizes for chat UI
+ * PREVIEW_THUMBNAIL_SIZE: Size of image thumbnails in preview before sending (80x80px)
+ * MESSAGE_IMAGE_WIDTH: Width of images displayed in chat messages (150px)
+ */
+export const IMAGE_SIZES = {
+  PREVIEW_THUMBNAIL_SIZE: 80, // px
+  MESSAGE_IMAGE_WIDTH: 150, // px
 } as const;

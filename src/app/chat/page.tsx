@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Flex, Box } from "@radix-ui/themes";
+import { Flex, Box, Text } from "@radix-ui/themes";
 import {
   ChatHeader,
   WelcomeScreen,
@@ -30,19 +30,31 @@ const MESSAGES_AREA_STYLE = {
 export default function Page() {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, error, stop } = useChatMessages();
-  const { files, fileInputRef, cameraInputRef, clearFiles, handleFileChange } =
-    useFileUpload();
+  const {
+    files,
+    fileInputRef,
+    cameraInputRef,
+    clearFiles,
+    handleFileChange,
+    isCompressing,
+    compressionError,
+    fileMetadata,
+  } = useFileUpload();
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      // Don't submit while compressing or if there's a compression error
+      if (isCompressing || compressionError) {
+        return;
+      }
       if (input.trim() || (files && files.length > 0)) {
         sendMessage({ text: input, files });
         setInput("");
         clearFiles();
       }
     },
-    [input, files, sendMessage, clearFiles]
+    [input, files, sendMessage, clearFiles, isCompressing, compressionError]
   );
 
   const handleSendMessage = useCallback(
@@ -65,6 +77,10 @@ export default function Page() {
       // Submit on Enter (without Shift)
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
+        // Don't submit while compressing or if there's a compression error
+        if (isCompressing || compressionError) {
+          return;
+        }
         if (input.trim() || (files && files.length > 0)) {
           sendMessage({ text: input, files });
           setInput("");
@@ -73,7 +89,7 @@ export default function Page() {
       }
       // Allow Shift+Enter for new line (default textarea behavior)
     },
-    [input, files, sendMessage, clearFiles]
+    [input, files, sendMessage, clearFiles, isCompressing, compressionError]
   );
 
   const hasContent =
@@ -95,9 +111,22 @@ export default function Page() {
         )}
       </Box>
 
-      <ChatErrorDisplay error={error} />
+      <ChatErrorDisplay
+        error={error || (compressionError ? new Error(compressionError) : null)}
+      />
 
-      {files && <ImagePreview files={files} onClear={clearFiles} />}
+      {files && (
+        <ImagePreview
+          files={files}
+          onClear={clearFiles}
+          fileMetadata={fileMetadata}
+        />
+      )}
+      {isCompressing && (
+        <Box p="4" style={{ background: "var(--blue-3)" }}>
+          <Text size="2">🔄 Comprimiendo imagen...</Text>
+        </Box>
+      )}
 
       <ChatInputArea
         input={input}

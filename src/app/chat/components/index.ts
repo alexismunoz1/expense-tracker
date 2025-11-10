@@ -11,6 +11,8 @@ export * from "./chat-input-area";
 export * from "./hidden-file-inputs";
 export * from "./chat-submit-button";
 export * from "./inline-loading-indicator";
+export * from "./image-skeleton";
+export * from "./image-modal";
 
 // Expense list components
 export * from "./expense-list";
